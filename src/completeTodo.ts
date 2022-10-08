@@ -197,7 +197,7 @@ function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoC
   return text;
 }
 
-export async function completeTodo() {
+export async function completeTodo(copyToNotes: boolean, removeContents: boolean) {
   const editor = vscode.window.activeTextEditor;
   if (editor == null) {
     return;
@@ -220,33 +220,38 @@ export async function completeTodo() {
       let todoContentsRange: vscode.Range | null = null;
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
-        const { metadata, lines } = parseYamlMetadata(parsed, todoRange);
-        const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
+        if (copyToNotes) {
+          const { metadata, lines } = parseYamlMetadata(parsed, todoRange);
+          const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
 
-        const title = metadata.Title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
-        const fileName = sanitize(metadata.FileName ?? title + ".md");
-        const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
-        const toDir = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
-        const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
-        const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
-        const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, lines, config.EOL);
-        const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
+          const title = metadata.Title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
+          const fileName = sanitize(metadata.FileName ?? title + ".md");
+          const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
+          const toDir = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
+          const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
+          const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
+          const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, lines, config.EOL);
+          const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
 
-        const metadataStr = stringify(metadata);
-        const header = metadataStr.length > 0 ? "---" + config.EOL + metadataStr + "---" : "";
-
-        await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);
+          const metadataStr = stringify(metadata);
+          const header = metadataStr.length > 0 ? "---" + config.EOL + metadataStr + "---" : "";
+          await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);
+          vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
+        }
       }
 
       editor.edit((e) => {
         const newLine = todoLine.text.replace(/- \[ \]/, "- [x]");
         e.replace(todoLine.range, newLine);
-        if (todoContentsRange != null) {
+        if (removeContents && todoContentsRange != null) {
           e.delete(todoContentsRange);
+          if (!copyToNotes) {
+            vscode.window.showInformationMessage(`Todo content has been deleted.`);
+          }
         }
       });
     }
   } catch (e) {
-    vscode.window.showErrorMessage("Failed to write notes to file");
+    vscode.window.showErrorMessage("Failed to write notes to file.");
   }
 }

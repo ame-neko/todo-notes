@@ -24,8 +24,16 @@
         "title": "Add Todo"
       },
       {
-        "command": "todo-notes.completeTodo",
-        "title": "Complete Todo"
+        "command": "todo-notes.completeAndCopyTodo",
+        "title": "Complete Todo and Copy to Notes"
+      },
+      {
+        "command": "todo-notes.completeAndDiscardTodo",
+        "title": "Complete Todo and Discard contents"
+      },
+      {
+        "command": "todo-notes.justCompleteTodo",
+        "title": "Just Complete Todo"
       },
       {
         "command": "todoNotesTags.refreshEntry",
@@ -47,7 +55,17 @@
         },
         {
           "when": "resourceLangId == markdown",
-          "command": "todo-notes.completeTodo",
+          "command": "todo-notes.completeAndCopyTodo",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceLangId == markdown",
+          "command": "todo-notes.completeAndDiscardTodo",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceLangId == markdown",
+          "command": "todo-notes.justCompleteTodo",
           "group": "1_modification"
         }
       ],
@@ -75,9 +93,21 @@
         "when": "resourceLangId == markdown && editorTextFocus"
       },
       {
-        "command": "todo-notes.completeTodo",
+        "command": "todo-notes.completeAndCopyTodo",
         "key": "ctrl+d",
         "mac": "cmd+d",
+        "when": "resourceLangId == markdown && editorTextFocus"
+      },
+      {
+        "command": "todo-notes.completeAndDiscardTodo",
+        "key": "ctrl+alt+e",
+        "mac": "cmd+alt+e",
+        "when": "resourceLangId == markdown && editorTextFocus"
+      },
+      {
+        "command": "todo-notes.justCompleteTodo",
+        "key": "ctrl+alt+j",
+        "mac": "cmd+alt+j",
         "when": "resourceLangId == markdown && editorTextFocus"
       }
     ],

@@ -17,16 +17,20 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(addTodoDisposable);
 
-  const completeTodoDisposable = vscode.commands.registerCommand("todo-notes.completeTodo", () => {
-    // const editor = vscode.window.activeTextEditor;
-    // if (editor){
-    // 	const currentLine = editor.document.lineAt(editor.selection.active.line)
-    // 	const newLine = currentLine.text.replace(/^- \[ \]/, "- [x]", )
-    // 	editor?.edit(e => {e.replace(currentLine.range, newLine)});
-    // }
-    completeTodo();
+  const completeAndCopyTodoDisposable = vscode.commands.registerCommand("todo-notes.completeAndCopyTodo", () => {
+    completeTodo(true, true);
   });
-  context.subscriptions.push(completeTodoDisposable);
+  context.subscriptions.push(completeAndCopyTodoDisposable);
+
+  const completeAndDiscardTodoDisposable = vscode.commands.registerCommand("todo-notes.completeAndDiscardTodo", () => {
+    completeTodo(false, true);
+  });
+  context.subscriptions.push(completeAndDiscardTodoDisposable);
+
+  const justCompleteTodoDisposable = vscode.commands.registerCommand("todo-notes.justCompleteTodo", () => {
+    completeTodo(false, false);
+  });
+  context.subscriptions.push(justCompleteTodoDisposable);
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
