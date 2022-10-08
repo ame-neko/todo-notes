@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 const frontMatter = require("front-matter");
 
-class Element extends vscode.TreeItem {
+export class Element extends vscode.TreeItem {
   type: "tag" | "file";
   name: string;
   filePath: string | null;
@@ -130,5 +130,23 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
         .sort()
         .map((key) => new Element("tag", key, null))
     );
+  }
+
+  async createVirtualDocument(uri: vscode.Uri): Promise<string> {
+    const tag = uri.path;
+    let res = "";
+    if (!this.tagToElements[tag]) {
+      return "";
+    }
+    const texts = await Promise.all(
+      this.tagToElements[tag]?.map((element) => {
+        if (element.filePath) {
+          return fs.promises.readFile(element.filePath, "utf-8");
+        }
+      })
+    );
+    return texts
+      .filter((v) => typeof v === "string")
+      .join("\n\n* * * * * * * * * * * * * * *\n\n");
   }
 }

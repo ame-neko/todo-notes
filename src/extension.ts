@@ -3,7 +3,7 @@
 import * as vscode from "vscode";
 
 import { completeTodo } from "./completeTodo";
-import { NotesTagsProvider } from "./tagsTreeView";
+import { Element, NotesTagsProvider } from "./tagsTreeView";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -65,10 +65,36 @@ export function activate(context: vscode.ExtensionContext) {
     let treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
       treeDataProvider: provider,
     });
-    let refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () =>
-      provider.refresh()
+    let refreshDisposable = vscode.commands.registerCommand(
+      "todoNotesTags.refreshEntry",
+      () => provider.refresh()
     );
-	context.subscriptions.push(refreshDisposable);
+    context.subscriptions.push(refreshDisposable);
+
+    let createVirtualDocumentDisposable = vscode.commands.registerCommand(
+      "todoNotesTags.createVirtualDocument",
+      async (element: Element) => {
+        let uri = vscode.Uri.parse("tags:" + element.name);
+        let doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.languages.setTextDocumentLanguage(doc, "markdown");
+        await vscode.window.showTextDocument(doc, { preview: true });
+      }
+    );
+    context.subscriptions.push(createVirtualDocumentDisposable);
+
+    const tagAllDocumentProvider = new (class
+      implements vscode.TextDocumentContentProvider
+    {
+      async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+        return await provider.createVirtualDocument(uri);
+      }
+    })();
+    let tagAllDocumentProviderDisposable =
+      vscode.workspace.registerTextDocumentContentProvider(
+        "tags",
+        tagAllDocumentProvider
+      );
+    context.subscriptions.push(tagAllDocumentProviderDisposable);
 
     treeViewDisposable.onDidChangeSelection((e) => {
       if (e.selection.length > 0 && e.selection[0].filePath) {

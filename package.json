@@ -31,6 +31,11 @@
         "command": "todoNotesTags.refreshEntry",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "todoNotesTags.createVirtualDocument",
+        "title": "Create Virtual Document",
+        "icon": "$(eye)"
       }
     ],
     "menus": {
@@ -51,6 +56,14 @@
           "command": "todoNotesTags.refreshEntry",
           "when": "view == todoNotesTags",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "todoNotesTags.createVirtualDocument",
+          "when": "view == todoNotesTags",
+          "group": "inline",
+          "args": "test"
         }
       ]
     },
