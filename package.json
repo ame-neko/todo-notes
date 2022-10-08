@@ -64,6 +64,14 @@
           "description": "Path to directory where notes will be saved."
         }
       }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "todoNotesTags",
+          "name": "Notes Tags"
+        }
+      ]
     }
   },
   "scripts": {
