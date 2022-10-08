@@ -61,7 +61,7 @@ async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any,
 }
 
 function isTodo(element: any): boolean {
-  if (element?.type === "listItem" && element?.checked !== null) {
+  if (element?.type === "listItem" && element?.checked != null) {
     return true;
   }
   return false;
@@ -75,7 +75,7 @@ function getCurrentLineLevel(flattenParsedResult: any[], currentLineNumberFrom1:
       element?.position?.start.line <= currentLineNumberFrom1 &&
       element?.position?.end.line &&
       element?.position?.end.line >= currentLineNumberFrom1 &&
-      element?.level !== null
+      element?.level != null
     ) {
       level = element.level > level ? element.level : level;
     }
@@ -104,7 +104,7 @@ function detectCompletedTodoRange(
       }
     } else {
       // end position detection
-      if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked === null) {
+      if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked == null) {
         return null;
       }
       if (todoRangeDetectionMode === "strict") {
@@ -125,7 +125,7 @@ function detectCompletedTodoRange(
     }
   }
 
-  if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked === null) {
+  if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked == null) {
     return null;
   }
   if (endLineFrom1 < 0) {
@@ -159,9 +159,9 @@ function parseYamlMetadata(elementsList: any[]): { metadata: yamlMetadata; lines
   let metadata: yamlMetadata = {};
   const lines: number[] = [];
   elementsList.forEach((e) => {
-    if (e?.type == "definition" && e?.identifier == "metadata" && e?.title) {
+    if (e?.type === "definition" && e?.identifier === "metadata" && e?.title) {
       const meta = parse(e.title);
-      if (e?.position?.start?.line !== null) {
+      if (e?.position?.start?.line != null) {
         // -1 to make line number start from 0
         lines.push(e?.position?.start?.line - 1);
       }
@@ -186,7 +186,7 @@ function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoC
 
 export async function completeTodo() {
   const editor = vscode.window.activeTextEditor;
-  if (!editor) {
+  if (editor == null) {
     return;
   }
   try {
@@ -202,7 +202,7 @@ export async function completeTodo() {
 
     const todoRange = detectCompletedTodoRange(parsed, currentLineNumberFrom1, editor, config.todoRangeDetectionMode);
 
-    if (todoRange) {
+    if (todoRange != null) {
       const todoLine = editor.document.lineAt(todoRange.start.line);
       let todoContentsRange: vscode.Range | null = null;
       if (todoRange.end.line > todoRange.start.line) {
@@ -228,7 +228,7 @@ export async function completeTodo() {
       editor.edit((e) => {
         const newLine = todoLine.text.replace(/- \[ \]/, "- [x]");
         e.replace(todoLine.range, newLine);
-        if (todoContentsRange) {
+        if (todoContentsRange != null) {
           e.delete(todoContentsRange);
         }
       });

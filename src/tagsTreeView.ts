@@ -42,12 +42,12 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   }
 
   getChildren(element?: Element): Thenable<Element[]> {
-    if (!this.workspaceRoot) {
+    if (this.workspaceRoot == null) {
       vscode.window.showInformationMessage("No dependency in empty workspace");
       return Promise.resolve([]);
     }
 
-    if (element) {
+    if (element != null) {
       // children
       if (element.name in this.tagToElements) {
         return Promise.resolve(this.tagToElements[element.name].sort());
