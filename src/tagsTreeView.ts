@@ -6,8 +6,8 @@ const frontMatter = require("front-matter");
 class Element extends vscode.TreeItem {
   type: "tag" | "file";
   name: string;
-  path: string | null;
-  constructor(type: "tag" | "file", name: string, path: string | null) {
+  filePath: string | null;
+  constructor(type: "tag" | "file", name: string, filePath: string | null) {
     const collapsibleState: vscode.TreeItemCollapsibleState =
       type === "tag"
         ? vscode.TreeItemCollapsibleState.Collapsed
@@ -15,7 +15,12 @@ class Element extends vscode.TreeItem {
     super(name, collapsibleState);
     this.type = type;
     this.name = name;
-    this.path = path;
+    this.filePath = filePath;
+    if (type === "tag") {
+      this.iconPath = new vscode.ThemeIcon("tag");
+    } else {
+      this.iconPath = new vscode.ThemeIcon("file");
+    }
   }
 }
 
@@ -86,10 +91,10 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     const elements = await this.walk(this.workspaceRoot);
     await Promise.all(
       elements.map(async (element) => {
-        if (!element.path) {
+        if (!element.filePath) {
           return;
         }
-        const tags = await this.extractTagFromNote(element.path);
+        const tags = await this.extractTagFromNote(element.filePath);
         tags.forEach((tag) => {
           if (tag in this.tagToElements) {
             this.tagToElements[tag].push(element);

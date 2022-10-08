@@ -65,8 +65,8 @@ export function activate(context: vscode.ExtensionContext) {
       treeDataProvider: new NotesTagsProvider(rootPath),
     });
     treeViewDisposable.onDidChangeSelection((e) => {
-      if (e.selection.length > 0 && e.selection[0].path) {
-        const openPath = vscode.Uri.file(e.selection[0].path);
+      if (e.selection.length > 0 && e.selection[0].filePath) {
+        const openPath = vscode.Uri.file(e.selection[0].filePath);
         vscode.workspace.openTextDocument(openPath).then((doc) => {
           vscode.window.showTextDocument(doc);
         });
