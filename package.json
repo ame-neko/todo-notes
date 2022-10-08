@@ -122,6 +122,8 @@
   },
   "dependencies": {
     "front-matter": "^4.0.2",
-    "sanitize-filename": "^1.6.3"
+    "remark-parse": "9.0.0",
+    "sanitize-filename": "^1.6.3",
+    "unified": "9.2.2"
   }
 }
