@@ -3,10 +3,10 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 const frontMatter = require("front-matter");
 
-async function writeToFile(title: string, text: string, yamlHeader: any) {
+async function writeToFile(todoTitle: string, contents: any) {
   const configurations = vscode.workspace.getConfiguration("todo-notes");
   const folderPath: string =
-    yamlHeader?.attributes?.folderPath ??
+    contents?.attributes?.folderPath ??
     configurations.get("saveNotesPath") ??
     "";
   if (!vscode.workspace.workspaceFolders) {
@@ -15,16 +15,18 @@ async function writeToFile(title: string, text: string, yamlHeader: any) {
       "Failed to create file because no folder or workspace opened."
     );
   }
+  const title = "# " + (contents?.attributes?.title ?? todoTitle);
+  const header = "---\n" + contents?.frontmatter + "\n---" ?? "";
+  const body = contents?.body ?? "";
   // TODO: change new line character
-  const writeStr =
-    "# " + (yamlHeader?.attributes?.title ?? title) + "\n" + text;
+  const writeStr = header + "\n" + title + "\n" + body;
   const writeData = Buffer.from(writeStr, "utf-8");
   const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
 
   const folderUri = workspaceFolderUri.with({
     path: posix.join(workspaceFolderUri.path, folderPath),
   });
-  const fileName = sanitize(yamlHeader?.attributes?.fileName ?? title + ".md");
+  const fileName = sanitize(contents?.attributes?.fileName ?? title + ".md");
   const fileUri = folderUri.with({
     path: posix.join(folderUri.path, fileName),
   });
@@ -82,8 +84,8 @@ export async function completeTodo() {
       if (range) {
         const title = currentLine.text.replace(/^- \[ \]\s*/, "");
         const text = editor.document.getText(range);
-        const yamlHeader = frontMatter(text);
-        await writeToFile(title, text, yamlHeader);
+        const contents = frontMatter(text);
+        await writeToFile(title, contents);
       }
       editor.edit((e) => {
         e.replace(currentLine.range, newLine);
