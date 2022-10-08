@@ -118,7 +118,6 @@ function detectCompletedTodoRange(
     endLineLength = line.length;
   }
   if (end != null && endLineLength != null) {
-    console.log("start: " + start + ", end: " + end);
     return new vscode.Range(
       new vscode.Position(start, 0),
       new vscode.Position(end, endLineLength)
