@@ -187,6 +187,18 @@ function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { meta
   };
 }
 
+function isChildTodoCompleted(elementsList: any[], todoContentsRange: vscode.Range) {
+  for (const e of elementsList) {
+    if (e?.position?.start?.line < todoContentsRange.start.line + 1 || e?.position?.start?.line > todoContentsRange.end.line + 1) {
+      continue;
+    }
+    if (isTodo(e) && !e?.checked) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoContentsRange: vscode.Range, lines: number[], EOL: string): string {
   let text = "";
   for (let li = todoContentsRange.start.line; li <= todoContentsRange.end.line; li++) {
@@ -220,6 +232,12 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
       let todoContentsRange: vscode.Range | null = null;
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
+        if (!isChildTodoCompleted(parsed, todoContentsRange)) {
+          const answer = await vscode.window.showWarningMessage("Uncompleted Todo exist. Do you want to proceed?", "yes", "no");
+          if (answer !== "yes") {
+            return;
+          }
+        }
         if (copyToNotes) {
           const { metadata, lines } = parseYamlMetadata(parsed, todoRange);
           const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
