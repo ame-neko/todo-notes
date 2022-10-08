@@ -77,7 +77,9 @@ function getCurrentLineLevel(flattenParsedResult: any[], currentLineNumberFrom1:
       element?.position?.end.line >= currentLineNumberFrom1 &&
       element?.level != null
     ) {
-      level = element.level > level ? element.level : level;
+      if (element.level > level) {
+        level = element.level;
+      }
     }
   }
   return level;
@@ -93,7 +95,8 @@ function detectCompletedTodoRange(
   let startLineLevel = -1;
   let endLineFrom1 = -1;
   let startLineIsChecked = false;
-  const currentLineLevel = getCurrentLineLevel(flattenParsedResult, currentLineNumberFrom1);
+  // minimum level of todo is 2
+  const currentLineLevel = Math.max(getCurrentLineLevel(flattenParsedResult, currentLineNumberFrom1), 2);
   for (const element of flattenParsedResult) {
     if (element.position.start.line <= currentLineNumberFrom1) {
       // start position detection
