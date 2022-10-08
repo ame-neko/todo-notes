@@ -27,6 +27,34 @@
         "command": "todo-notes.completeTodo",
         "title": "Complete Todo"
       }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == markdown",
+          "command": "todo-notes.addTodo",
+          "group": "1_modification"
+        },
+        {
+          "when": "resourceLangId == markdown",
+          "command": "todo-notes.completeTodo",
+          "group": "1_modification"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "todo-notes.addTodo",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "resourceLangId == markdown && editorTextFocus"
+      },
+      {
+        "command": "todo-notes.completeTodo",
+        "key": "ctrl+d",
+        "mac": "cmd+d",
+        "when": "resourceLangId == markdown && editorTextFocus"
+      }
     ]
   },
   "scripts": {
