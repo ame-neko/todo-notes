@@ -55,7 +55,16 @@
         "mac": "cmd+d",
         "when": "resourceLangId == markdown && editorTextFocus"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "todo-notes",
+      "properties": {
+        "todoNotes.saveNotesPath": {
+          "type": "string",
+          "description": "Path to directory where notes will be saved."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

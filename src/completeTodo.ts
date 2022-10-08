@@ -2,6 +2,8 @@ import { posix } from "path";
 import * as vscode from "vscode";
 
 async function writeToFile(lines: string[]) {
+  const configurations = vscode.workspace.getConfiguration("todo-notes");
+  const folderPath: string = configurations.get("saveNotesPath") ?? "";
   if (!vscode.workspace.workspaceFolders) {
     vscode.window.showErrorMessage("No folder or workspace opened");
     throw new Error(
@@ -11,10 +13,15 @@ async function writeToFile(lines: string[]) {
   // TODO: change new line character
   const writeStr = lines.join("\n");
   const writeData = Buffer.from(writeStr, "utf-8");
-  const folderUri = vscode.workspace.workspaceFolders[0].uri;
+  const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
+  const folderUri = workspaceFolderUri.with({
+    path: posix.join(workspaceFolderUri.path, folderPath),
+  });
   const fileUri = folderUri.with({
     path: posix.join(folderUri.path, "test.txt"),
   });
+  await vscode.workspace.fs.createDirectory(folderUri);
+
   await vscode.workspace.fs.writeFile(fileUri, writeData);
 }
 
