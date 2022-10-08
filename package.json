@@ -9,16 +9,16 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pixel-png/todo-notes.git"
+},
   "activationEvents": [
     "onLanguage:markdown"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "todo-notes.helloWorld",
-        "title": "Hello World"
-      },
       {
         "command": "todo-notes.addTodo",
         "title": "Add Todo"
