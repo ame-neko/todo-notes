@@ -34,7 +34,7 @@
       },
       {
         "command": "todoNotesTags.createVirtualDocument",
-        "title": "Create Virtual Document",
+        "title": "See all documents in this tag",
         "icon": "$(eye)"
       }
     ],
@@ -61,7 +61,7 @@
       "view/item/context": [
         {
           "command": "todoNotesTags.createVirtualDocument",
-          "when": "view == todoNotesTags",
+          "when": "view == todoNotesTags && viewItem == tag",
           "group": "inline",
           "args": "test"
         }

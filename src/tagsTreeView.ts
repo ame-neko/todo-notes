@@ -16,6 +16,7 @@ export class Element extends vscode.TreeItem {
     this.type = type;
     this.name = name;
     this.filePath = filePath;
+    this.contextValue = type;
     if (type === "tag") {
       this.iconPath = new vscode.ThemeIcon("tag");
     } else {
