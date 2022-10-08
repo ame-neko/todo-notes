@@ -19,13 +19,11 @@ interface yamlMetadata {
 const EOL = os.EOL;
 
 function replaceUrl(text: string, from: string, to: string) {
-  const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
-  const flattenParsedResult: any[] = flattenParsedMarkDown([], parseResult, 0);
-  flattenParsedResult.sort((a, b) => a.position.start.line - b.position.start.line);
+  const flattened = parseMarkdown(text);
 
   const newTextList = [];
   let currentIndex = 0;
-  flattenParsedResult.forEach((element: any) => {
+  flattened.forEach((element: any) => {
     if (element?.type === "image") {
       const oldUrl = element.url;
       if (path.isAbsolute(oldUrl)) {
@@ -142,6 +140,13 @@ function detectCompletedTodoRange(
   return new vscode.Range(new vscode.Position(startLineFrom1 - 1, 0), new vscode.Position(endLineFrom1 - 1, endLineLength));
 }
 
+function parseMarkdown(text: string) {
+  const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
+  const flattend: any[] = flattenParsedMarkDown([], parseResult, 0);
+  flattend.sort((a, b) => a.position.start.line - b.position.start.line);
+  return flattend;
+}
+
 function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) {
   parsed.level = level;
   elementsList.push(parsed);
@@ -189,9 +194,7 @@ export async function completeTodo() {
     const currentLineNumber = editor.selection.active.line;
     const currentLineNumberFrom1 = currentLineNumber + 1;
     const activeDocumentText = editor.document.getText();
-    const parseResult = unified().use(remarkParse).use(remarkGfm).parse(activeDocumentText);
-    const flattenParsedResult: any[] = flattenParsedMarkDown([], parseResult, 0);
-    flattenParsedResult.sort((a, b) => a.position.start.line - b.position.start.line);
+    const parsed = parseMarkdown(activeDocumentText);
 
     const configurations = vscode.workspace.getConfiguration("todoNotes");
     if (!vscode.workspace.workspaceFolders) {
@@ -199,26 +202,29 @@ export async function completeTodo() {
       throw new Error("Failed to create file because no folder or workspace opened.");
     }
     const rangeDetectionMode: "strict" | "next-todo" = configurations.get("rangeDetectionMode") === "strict" ? "strict" : "next-todo";
-    const todoRange = detectCompletedTodoRange(flattenParsedResult, currentLineNumberFrom1, editor, rangeDetectionMode);
+    const todoRange = detectCompletedTodoRange(parsed, currentLineNumberFrom1, editor, rangeDetectionMode);
 
     if (todoRange) {
       const todoLine = editor.document.lineAt(todoRange.start.line);
       let todoContentsRange: vscode.Range | null = null;
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
-        const metadata = parseYamlMetadata(flattenParsedResult);
+        const metadata = parseYamlMetadata(parsed);
         const folderPath: string = metadata.folderPath ?? configurations.get("saveNotesPath") ?? "";
-        const metadataStr = stringify(metadata);
-        const header = metadataStr.length > 0 ? "---" + EOL + metadataStr + "---" : "";
+
         const title = metadata.title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
         const fileName = sanitize(metadata.fileName ?? title + ".md");
         const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
-        const folderUri = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
+        const toDir = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
         const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
         const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
         const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, metadata);
-        const bodyUrlReplaced = replaceUrl(body, fromDir, folderUri.path);
-        await writeToFile(folderUri, fileName, header, "# " + title, bodyUrlReplaced);
+        const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
+
+        const metadataStr = stringify(metadata);
+        const header = metadataStr.length > 0 ? "---" + EOL + metadataStr + "---" : "";
+
+        await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced);
       }
 
       editor.edit((e) => {
