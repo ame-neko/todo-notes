@@ -242,7 +242,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           const { metadata, lines } = parseYamlMetadata(parsed, todoRange);
           const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
 
-          const title = metadata.Title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
+          const title = metadata.Title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "").trim();
           const fileName = sanitize(metadata.FileName ?? title + ".md");
           const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
           const toDir = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
@@ -253,6 +253,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
 
           const metadataStr = stringify(metadata);
           const header = metadataStr.length > 0 ? "---" + config.EOL + metadataStr + "---" : "";
+          //TODO: ask user when the destination note already exist
           await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);
           vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
         }
@@ -262,7 +263,12 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
         const newLine = todoLine.text.replace(/- \[ \]/, "- [x]");
         e.replace(todoLine.range, newLine);
         if (removeContents && todoContentsRange != null) {
-          e.delete(todoContentsRange);
+          // create new range to delete new line character in the todo line
+          const removeRange = new vscode.Range(
+            new vscode.Position(todoContentsRange.start.line - 1, editor.document.lineAt(todoContentsRange.start.line - 1).text.length),
+            todoContentsRange.end
+          );
+          e.delete(removeRange);
           if (!copyToNotes) {
             vscode.window.showInformationMessage(`Todo content has been deleted.`);
           }
