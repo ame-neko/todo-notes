@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
@@ -94,7 +95,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
 
   async getAllTags() {
     const elements = await this.walk(this.workspaceRoot);
-    let te: { [key: string]: Element[] } = {};
+    const te: { [key: string]: Element[] } = {};
     await Promise.all(
       elements.map(async (element) => {
         if (!element.filePath) {
@@ -128,7 +129,6 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
 
   async createVirtualDocument(uri: vscode.Uri): Promise<string> {
     const tag = uri.path;
-    let res = "";
     if (!this.tagToElements[tag]) {
       return "";
     }

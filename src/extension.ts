@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "todo-notes" is now active!');
 
-  let addTodoDisposable = vscode.commands.registerCommand("todo-notes.addTodo", () => {
+  const addTodoDisposable = vscode.commands.registerCommand("todo-notes.addTodo", () => {
     const TODO_MARKDOWN = "- [ ] ";
     const editor = vscode.window.activeTextEditor;
     editor?.edit((e) => {
@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(addTodoDisposable);
 
-  let completeTodoDisposable = vscode.commands.registerCommand("todo-notes.completeTodo", () => {
+  const completeTodoDisposable = vscode.commands.registerCommand("todo-notes.completeTodo", () => {
     // const editor = vscode.window.activeTextEditor;
     // if (editor){
     // 	const currentLine = editor.document.lineAt(editor.selection.active.line)
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  let disposable = vscode.commands.registerCommand("todo-notes.helloWorld", () => {
+  const disposable = vscode.commands.registerCommand("todo-notes.helloWorld", () => {
     // The code you place here will be executed every time your command is executed
     // Display a message box to the user
     vscode.window.showInformationMessage("Hello World from Todo Notes!");
@@ -47,15 +47,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
   if (rootPath) {
     const provider = new NotesTagsProvider(rootPath);
-    let treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
+    const treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
       treeDataProvider: provider,
     });
-    let refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () => provider.refresh());
+    const refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () => provider.refresh());
     context.subscriptions.push(refreshDisposable);
 
-    let createVirtualDocumentDisposable = vscode.commands.registerCommand("todoNotesTags.createVirtualDocument", async (element: Element) => {
-      let uri = vscode.Uri.parse("tags:" + element.name);
-      let doc = await vscode.workspace.openTextDocument(uri);
+    const createVirtualDocumentDisposable = vscode.commands.registerCommand("todoNotesTags.createVirtualDocument", async (element: Element) => {
+      const uri = vscode.Uri.parse("tags:" + element.name);
+      const doc = await vscode.workspace.openTextDocument(uri);
       await vscode.languages.setTextDocumentLanguage(doc, "markdown");
       await vscode.window.showTextDocument(doc, { preview: true });
     });
@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
         return await provider.createVirtualDocument(uri);
       }
     })();
-    let tagAllDocumentProviderDisposable = vscode.workspace.registerTextDocumentContentProvider("tags", tagAllDocumentProvider);
+    const tagAllDocumentProviderDisposable = vscode.workspace.registerTextDocumentContentProvider("tags", tagAllDocumentProvider);
     context.subscriptions.push(tagAllDocumentProviderDisposable);
 
     treeViewDisposable.onDidChangeSelection((e) => {
@@ -82,4 +82,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 export function deactivate() {}

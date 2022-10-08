@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { posix } from "path";
 import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
@@ -83,7 +84,7 @@ function isTodo(element: any): boolean {
 
 function getCurrentLineLevel(flattenParsedMarkDown: any[], currentLineNumberFrom1: number) {
   let level = -1;
-  for (let element of flattenParsedMarkDown) {
+  for (const element of flattenParsedMarkDown) {
     if (
       element?.position?.start.line &&
       element?.position?.start.line <= currentLineNumberFrom1 &&
@@ -108,7 +109,7 @@ function detectCompletedTodoRange(
   let endLineFrom1 = -1;
   let startLineIsChecked = false;
   const currentLineLevel = getCurrentLineLevel(flattenParsedMarkDown, currentLineNumberFrom1);
-  for (let element of flattenParsedMarkDown) {
+  for (const element of flattenParsedMarkDown) {
     if (element.position.start.line <= currentLineNumberFrom1) {
       // start position detection
       if (isTodo(element) && element.level <= currentLineLevel) {
