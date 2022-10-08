@@ -88,7 +88,7 @@
           "type": "string",
           "description": "Path to directory where notes will be saved."
         },
-        "todoNotes.rangeDetectionMode": {
+        "todoNotes.todoRangeDetectionMode": {
           "type": "string",
           "default": "strict",
           "enum": [
@@ -96,8 +96,23 @@
             "next-todo"
           ],
           "description": [
-            "Path to directory where notes will be saved.",
-            "Path to directory where notes will be saved."
+            "Detect todo range strictly following GFM markdwon syntax.",
+            "Todo range continues until next same or higher indent level todo."
+          ]
+        },
+        "todoNotes.eol": {
+          "title": "End of Line character",
+          "type": "string",
+          "default": "Operating System Default",
+          "enum": [
+            "Operating System Default",
+            "LF",
+            "CRLF"
+          ],
+          "description": [
+            "Use Operating System default end of line character when copying todo contents to note.",
+            "Use LF as end of line character when copying todo contents to note.",
+            "Use CRLF as end of line character when copying todo contents to note."
           ]
         }
       }

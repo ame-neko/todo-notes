@@ -2,10 +2,8 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import * as os from "os";
+import { loadConfiguration } from "./utils";
 const frontMatter = require("front-matter");
-
-const EOL = os.EOL;
 
 export class Element extends vscode.TreeItem {
   type: "tag" | "file";
@@ -131,6 +129,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   }
 
   async createVirtualDocument(uri: vscode.Uri): Promise<string> {
+    const config = loadConfiguration();
     const tag = uri.path;
     if (!this.tagToElements[tag]) {
       return "";
@@ -142,6 +141,6 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
         }
       })
     );
-    return texts.filter((v) => typeof v === "string").join(EOL + EOL + "* * * * * * * * * * * * * * *" + EOL + EOL);
+    return texts.filter((v) => typeof v === "string").join(config.EOL + config.EOL + "* * * * * * * * * * * * * * *" + config.EOL + config.EOL);
   }
 }

@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify } from "yaml";
-import * as os from "os";
+import { loadConfiguration } from "./utils";
 const unified = require("unified");
 const remarkParse = require("remark-parse");
 const remarkGfm = require("remark-gfm");
@@ -15,8 +15,6 @@ interface yamlMetadata {
   fileName?: string;
   lines: number[];
 }
-
-const EOL = os.EOL;
 
 function replaceUrl(text: string, from: string, to: string) {
   const flattened = parseMarkdown(text);
@@ -55,7 +53,7 @@ function isURL(pathStr: string) {
   }
 }
 
-async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any, title: string, body: string) {
+async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any, title: string, body: string, EOL: string) {
   const writeStr = header + EOL + title + EOL + body;
   const writeData = Buffer.from(writeStr, "utf-8");
   const fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
@@ -90,7 +88,7 @@ function detectCompletedTodoRange(
   flattenParsedResult: any[],
   currentLineNumberFrom1: number,
   editor: vscode.TextEditor,
-  rangeDetectionMode: "strict" | "next-todo"
+  todoRangeDetectionMode: "strict" | "next-todo"
 ): vscode.Range | null {
   let startLineFrom1 = -1;
   let startLineLevel = -1;
@@ -110,7 +108,7 @@ function detectCompletedTodoRange(
       if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked === null) {
         return null;
       }
-      if (rangeDetectionMode === "strict") {
+      if (todoRangeDetectionMode === "strict") {
         if (element.level < startLineLevel) {
           endLineFrom1 = element.position.start.line - 1;
           break;
@@ -119,7 +117,7 @@ function detectCompletedTodoRange(
           endLineFrom1 = element.position.start.line - 1;
           break;
         }
-      } else if (rangeDetectionMode === "next-todo") {
+      } else if (todoRangeDetectionMode === "next-todo") {
         if (element.level <= startLineLevel && isTodo(element)) {
           endLineFrom1 = element.position.start.line - 1;
           break;
@@ -175,7 +173,7 @@ function parseYamlMetadata(elementsList: any[]): yamlMetadata {
   return metadata;
 }
 
-function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoContentsRange: vscode.Range, metadata: yamlMetadata): string {
+function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoContentsRange: vscode.Range, metadata: yamlMetadata, EOL: string): string {
   let text = "";
   for (let li = todoContentsRange.start.line; li <= todoContentsRange.end.line; li++) {
     if (!metadata.lines.includes(li)) {
@@ -191,18 +189,17 @@ export async function completeTodo() {
     return;
   }
   try {
-    const currentLineNumber = editor.selection.active.line;
-    const currentLineNumberFrom1 = currentLineNumber + 1;
-    const activeDocumentText = editor.document.getText();
-    const parsed = parseMarkdown(activeDocumentText);
-
-    const configurations = vscode.workspace.getConfiguration("todoNotes");
     if (!vscode.workspace.workspaceFolders) {
       vscode.window.showErrorMessage("No folder or workspace opened");
       throw new Error("Failed to create file because no folder or workspace opened.");
     }
-    const rangeDetectionMode: "strict" | "next-todo" = configurations.get("rangeDetectionMode") === "strict" ? "strict" : "next-todo";
-    const todoRange = detectCompletedTodoRange(parsed, currentLineNumberFrom1, editor, rangeDetectionMode);
+    const currentLineNumber = editor.selection.active.line;
+    const currentLineNumberFrom1 = currentLineNumber + 1;
+    const activeDocumentText = editor.document.getText();
+    const parsed = parseMarkdown(activeDocumentText);
+    const config = loadConfiguration();
+
+    const todoRange = detectCompletedTodoRange(parsed, currentLineNumberFrom1, editor, config.todoRangeDetectionMode);
 
     if (todoRange) {
       const todoLine = editor.document.lineAt(todoRange.start.line);
@@ -210,7 +207,7 @@ export async function completeTodo() {
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
         const metadata = parseYamlMetadata(parsed);
-        const folderPath: string = metadata.folderPath ?? configurations.get("saveNotesPath") ?? "";
+        const folderPath: string = metadata.folderPath ?? config.saveNotesPath;
 
         const title = metadata.title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
         const fileName = sanitize(metadata.fileName ?? title + ".md");
@@ -218,13 +215,13 @@ export async function completeTodo() {
         const toDir = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
         const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
         const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
-        const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, metadata);
+        const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, metadata, config.EOL);
         const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
 
         const metadataStr = stringify(metadata);
-        const header = metadataStr.length > 0 ? "---" + EOL + metadataStr + "---" : "";
+        const header = metadataStr.length > 0 ? "---" + config.EOL + metadataStr + "---" : "";
 
-        await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced);
+        await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);
       }
 
       editor.edit((e) => {
