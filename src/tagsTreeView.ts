@@ -128,6 +128,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     );
   }
 
+  // TODO: modify image uri
   async createVirtualDocument(uri: vscode.Uri): Promise<string> {
     const config = loadConfiguration();
     const tag = uri.path;

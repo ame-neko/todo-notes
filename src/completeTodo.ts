@@ -52,8 +52,8 @@ function isURL(pathStr: string) {
   }
 }
 
-async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any, title: string, body: string, EOL: string) {
-  const writeStr = header + EOL + title + EOL + body;
+async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string) {
+  const writeStr = header != null ? header + EOL + title + EOL + body : title + EOL + body;
   const writeData = Buffer.from(writeStr, "utf-8");
   const fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
   await vscode.workspace.fs.createDirectory(folderUri);
@@ -251,8 +251,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, lines, config.EOL);
           const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
 
-          const metadataStr = stringify(metadata);
-          const header = metadataStr.length > 0 ? "---" + config.EOL + metadataStr + "---" : "";
+          const header = Object.keys(metadata).length > 0 ? "---" + config.EOL + stringify(metadata) + "---" : null;
           //TODO: ask user when the destination note already exist
           await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);
           vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
