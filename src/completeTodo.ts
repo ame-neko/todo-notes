@@ -158,11 +158,21 @@ function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) 
   return elementsList;
 }
 
-function parseYamlMetadata(elementsList: any[]): { metadata: yamlMetadata; lines: number[] } {
+function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { metadata: yamlMetadata; lines: number[] } {
   let metadata: yamlMetadata = {};
+  let todoLineLevel = -1;
   const lines: number[] = [];
   elementsList.forEach((e) => {
-    if (e?.type === "definition" && e?.identifier === "metadata" && e?.title) {
+    if (e?.position?.start?.line < todoRange.start.line + 1 || e?.position?.start?.line > todoRange.end.line + 1) {
+      return;
+    }
+    if (isTodo(e) && e?.position?.start?.line === todoRange.start.line + 1) {
+      todoLineLevel = e?.level;
+      return;
+    }
+
+    // metadata line level is todoLineLevel + 1
+    if (e?.level && e?.level <= todoLineLevel + 1 && e?.type === "definition" && e?.identifier === "metadata" && e?.title) {
       const meta = parse(e.title);
       if (e?.position?.start?.line != null) {
         // -1 to make line number start from 0
@@ -210,7 +220,7 @@ export async function completeTodo() {
       let todoContentsRange: vscode.Range | null = null;
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
-        const { metadata, lines } = parseYamlMetadata(parsed);
+        const { metadata, lines } = parseYamlMetadata(parsed, todoRange);
         const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
 
         const title = metadata.Title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
