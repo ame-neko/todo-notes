@@ -2,7 +2,10 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 const frontMatter = require("front-matter");
+
+const EOL = os.EOL;
 
 export class Element extends vscode.TreeItem {
   type: "tag" | "file";
@@ -139,6 +142,6 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
         }
       })
     );
-    return texts.filter((v) => typeof v === "string").join("\n\n* * * * * * * * * * * * * * *\n\n");
+    return texts.filter((v) => typeof v === "string").join(EOL + EOL + "* * * * * * * * * * * * * * *" + EOL + EOL);
   }
 }

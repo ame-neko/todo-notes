@@ -3,6 +3,8 @@ import { posix } from "path";
 import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
+import { parse, stringify } from "yaml";
+import * as os from "os";
 const frontMatter = require("front-matter");
 const unified = require("unified");
 const remarkParse = require("remark-parse");
@@ -14,6 +16,15 @@ interface editUrl {
   oldUrl: string;
   newUrl: string;
 }
+
+interface yamlMetadata {
+  folderPath?: string;
+  title?: string;
+  fileName?: string;
+  lines: number[];
+}
+
+const EOL = os.EOL;
 
 function replaceUrl(text: string, from: string, to: string) {
   const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
@@ -67,8 +78,7 @@ function getReplaceUrlList(json: any, from: string, to: string): editUrl[] {
 }
 
 async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any, title: string, body: string) {
-  // TODO: change new line character
-  const writeStr = header + "\n" + title + "\n" + body;
+  const writeStr = header + EOL + title + EOL + body;
   const writeData = Buffer.from(writeStr, "utf-8");
   const fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
   await vscode.workspace.fs.createDirectory(folderUri);
@@ -163,6 +173,33 @@ function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) 
   return elementsList;
 }
 
+function parseYamlMetadata(elementsList: any[]): yamlMetadata {
+  let metadata: yamlMetadata = { lines: [] };
+  const lines: number[] = [];
+  elementsList.forEach((e) => {
+    if (e?.type == "definition" && e?.identifier == "metadata" && e?.title) {
+      const meta = parse(e.title);
+      if (e?.position?.start?.line !== null) {
+        // -1 to make line number start from 0
+        lines.push(e?.position?.start?.line - 1);
+      }
+      metadata = { ...metadata, ...meta };
+    }
+  });
+  metadata.lines = lines;
+  return metadata;
+}
+
+function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoContentsRange: vscode.Range, metadata: yamlMetadata): string {
+  let text = "";
+  for (let li = todoContentsRange.start.line; li <= todoContentsRange.end.line; li++) {
+    if (!metadata.lines.includes(li)) {
+      text += document.lineAt(li).text + EOL;
+    }
+  }
+  return text;
+}
+
 export async function completeTodo() {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -190,16 +227,17 @@ export async function completeTodo() {
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
         const text = editor.document.getText(todoContentsRange);
-        const yamlHeader = frontMatter(text);
-        const folderPath: string = yamlHeader?.attributes?.folderPath ?? configurations.get("saveNotesPath") ?? "";
-        const header = yamlHeader?.frontmatter ? "---\n" + yamlHeader.frontmatter + "\n---" : "";
-        const title = yamlHeader?.attributes?.title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
-        const fileName = sanitize(yamlHeader?.attributes?.fileName ?? title + ".md");
+        const metadata = parseYamlMetadata(flattenParsedResult);
+        const folderPath: string = metadata.folderPath ?? configurations.get("saveNotesPath") ?? "";
+        const metadataStr = stringify(metadata);
+        const header = metadataStr.length > 0 ? "---" + EOL + metadataStr + "---" : "";
+        const title = metadata.title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
+        const fileName = sanitize(metadata.fileName ?? title + ".md");
         const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
         const folderUri = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
         const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
         const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
-        const body = yamlHeader?.body !== null ? replaceUrl(yamlHeader.body, fromDir, folderUri.path) : "";
+        const body = replaceUrl(getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, metadata), fromDir, folderUri.path);
         await writeToFile(folderUri, fileName, header, "# " + title, body);
       }
 
