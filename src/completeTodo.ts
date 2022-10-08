@@ -2,7 +2,7 @@ import { posix } from "path";
 import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 
-async function writeToFile(title: string, lines: string[]) {
+async function writeToFile(title: string, text: string) {
   const configurations = vscode.workspace.getConfiguration("todo-notes");
   const folderPath: string = configurations.get("saveNotesPath") ?? "";
   if (!vscode.workspace.workspaceFolders) {
@@ -12,7 +12,7 @@ async function writeToFile(title: string, lines: string[]) {
     );
   }
   // TODO: change new line character
-  const writeStr = "# " + title + "\n" + lines.join("\n");
+  const writeStr = "# " + title + "\n" + text;
   const writeData = Buffer.from(writeStr, "utf-8");
   const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
   const folderUri = workspaceFolderUri.with({
@@ -45,6 +45,7 @@ function detectCompletedTodoRange(
         // no content
         return null;
       }
+
       end = i;
       endLineLength = 0;
       break;
@@ -62,18 +63,6 @@ function detectCompletedTodoRange(
   return null;
 }
 
-function getTodoContents(
-  editor: vscode.TextEditor,
-  range: vscode.Range
-): string[] {
-  let lines: string[] = [];
-  for (let i = range.start.line; i <= range.end.line; i++) {
-    const line = editor.document.lineAt(i).text;
-    lines.push(line);
-  }
-  return lines;
-}
-
 export async function completeTodo() {
   const editor = vscode.window.activeTextEditor;
   if (editor) {
@@ -86,8 +75,8 @@ export async function completeTodo() {
       const range = detectCompletedTodoRange(editor);
       if (range) {
         const title = currentLine.text.replace(/^- \[ \]\s*/, "");
-        const lines = getTodoContents(editor, range);
-        await writeToFile(title, lines);
+        const text = editor.document.getText(range);
+        await writeToFile(title, text);
       }
       editor.edit((e) => {
         e.replace(currentLine.range, newLine);
