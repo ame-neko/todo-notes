@@ -88,6 +88,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
+    "front-matter": "^4.0.2",
     "sanitize-filename": "^1.6.3"
   }
 }

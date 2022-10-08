@@ -1,10 +1,14 @@
 import { posix } from "path";
 import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
+const frontMatter = require("front-matter");
 
-async function writeToFile(title: string, text: string) {
+async function writeToFile(title: string, text: string, yamlHeader: any) {
   const configurations = vscode.workspace.getConfiguration("todo-notes");
-  const folderPath: string = configurations.get("saveNotesPath") ?? "";
+  const folderPath: string =
+    yamlHeader?.attributes?.folderPath ??
+    configurations.get("saveNotesPath") ??
+    "";
   if (!vscode.workspace.workspaceFolders) {
     vscode.window.showErrorMessage("No folder or workspace opened");
     throw new Error(
@@ -12,13 +16,15 @@ async function writeToFile(title: string, text: string) {
     );
   }
   // TODO: change new line character
-  const writeStr = "# " + title + "\n" + text;
+  const writeStr =
+    "# " + (yamlHeader?.attributes?.title ?? title) + "\n" + text;
   const writeData = Buffer.from(writeStr, "utf-8");
   const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
+
   const folderUri = workspaceFolderUri.with({
     path: posix.join(workspaceFolderUri.path, folderPath),
   });
-  const fileName = sanitize(title + ".md");
+  const fileName = sanitize(yamlHeader?.attributes?.fileName ?? title + ".md");
   const fileUri = folderUri.with({
     path: posix.join(folderUri.path, fileName),
   });
@@ -76,7 +82,8 @@ export async function completeTodo() {
       if (range) {
         const title = currentLine.text.replace(/^- \[ \]\s*/, "");
         const text = editor.document.getText(range);
-        await writeToFile(title, text);
+        const yamlHeader = frontMatter(text);
+        await writeToFile(title, text, yamlHeader);
       }
       editor.edit((e) => {
         e.replace(currentLine.range, newLine);
