@@ -61,9 +61,15 @@ export function activate(context: vscode.ExtensionContext) {
       ? vscode.workspace.workspaceFolders[0].uri.fsPath
       : undefined;
   if (rootPath) {
+    const provider = new NotesTagsProvider(rootPath);
     let treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
-      treeDataProvider: new NotesTagsProvider(rootPath),
+      treeDataProvider: provider,
     });
+    let refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () =>
+      provider.refresh()
+    );
+	context.subscriptions.push(refreshDisposable);
+
     treeViewDisposable.onDidChangeSelection((e) => {
       if (e.selection.length > 0 && e.selection[0].filePath) {
         const openPath = vscode.Uri.file(e.selection[0].filePath);

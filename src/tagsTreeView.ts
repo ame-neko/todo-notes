@@ -30,6 +30,17 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     this.tagToElements = {};
   }
 
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    Element | undefined | null | void
+  > = new vscode.EventEmitter<Element | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<
+    Element | undefined | null | void
+  > = this._onDidChangeTreeData.event;
+  refresh(): void {
+    this.tagToElements = {};
+    this._onDidChangeTreeData.fire();
+  }
+
   getTreeItem(element: Element): vscode.TreeItem {
     return element;
   }
@@ -89,6 +100,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
 
   async getAllTags() {
     const elements = await this.walk(this.workspaceRoot);
+    let te: { [key: string]: Element[] } = {};
     await Promise.all(
       elements.map(async (element) => {
         if (!element.filePath) {
@@ -96,14 +108,16 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
         }
         const tags = await this.extractTagFromNote(element.filePath);
         tags.forEach((tag) => {
-          if (tag in this.tagToElements) {
-            this.tagToElements[tag].push(element);
+          if (tag in te) {
+            te[tag].push(element);
           } else {
-            this.tagToElements[tag] = [element];
+            te[tag] = [element];
           }
         });
       })
     );
+
+    this.tagToElements = te;
 
     return Promise.resolve(
       Object.keys(this.tagToElements).map(

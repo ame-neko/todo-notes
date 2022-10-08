@@ -26,6 +26,11 @@
       {
         "command": "todo-notes.completeTodo",
         "title": "Complete Todo"
+      },
+      {
+        "command": "todoNotesTags.refreshEntry",
+        "title": "Refresh",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -39,6 +44,13 @@
           "when": "resourceLangId == markdown",
           "command": "todo-notes.completeTodo",
           "group": "1_modification"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "todoNotesTags.refreshEntry",
+          "when": "view == todoNotesTags",
+          "group": "navigation"
         }
       ]
     },
