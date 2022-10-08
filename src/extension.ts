@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-
+import { addTodo } from "./addTodo";
 import { completeTodo } from "./completeTodo";
 import { Element, NotesTagsProvider } from "./tagsTreeView";
 
@@ -13,11 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "todo-notes" is now active!');
 
   const addTodoDisposable = vscode.commands.registerCommand("todo-notes.addTodo", () => {
-    const TODO_MARKDOWN = "- [ ] ";
-    const editor = vscode.window.activeTextEditor;
-    editor?.edit((e) => {
-      e.insert(new vscode.Position(editor.selection.active.line, 0), TODO_MARKDOWN);
-    });
+    addTodo();
   });
   context.subscriptions.push(addTodoDisposable);
 
