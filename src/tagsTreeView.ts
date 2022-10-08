@@ -84,11 +84,11 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   async extractTagFromNote(fp: string): Promise<string[]> {
     const data = await fs.promises.readFile(fp, "utf-8");
     const yamlHeader = frontMatter(data);
-    if (yamlHeader?.attributes?.tags) {
-      if (Array.isArray(yamlHeader?.attributes?.tags)) {
-        return yamlHeader?.attributes?.tags;
-      } else if (typeof yamlHeader?.attributes?.tags === "string") {
-        return [yamlHeader?.attributes?.tags];
+    if (yamlHeader?.attributes?.Tags) {
+      if (Array.isArray(yamlHeader?.attributes?.Tags)) {
+        return yamlHeader?.attributes?.Tags;
+      } else if (typeof yamlHeader?.attributes?.Tags === "string") {
+        return [yamlHeader?.attributes?.Tags];
       }
     }
     return [];
