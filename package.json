@@ -10,9 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:todo-notes.helloWorld",
-    "onCommand:todo-notes.addTodo",
-    "onCommand:todo-notes.completeTodo"
+    "onLanguage:markdown"
   ],
   "main": "./out/extension.js",
   "contributes": {
