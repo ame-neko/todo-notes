@@ -1,11 +1,11 @@
-const frontMatter = require("front-matter");
 import { posix } from "path";
 import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
-var unified = require("unified");
-const remarkParse = require("remark-parse");
-
 import * as path from "path";
+const frontMatter = require("front-matter");
+const unified = require("unified");
+const remarkParse = require("remark-parse");
+const remarkGfm = require("remark-gfm");
 
 interface editUrl {
   begin: number;
@@ -15,7 +15,7 @@ interface editUrl {
 }
 
 function replaceUrl(text: string, from: string, to: string) {
-  const parseResult = unified().use(remarkParse).parse(text);
+  const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
   const changeUrlList: editUrl[] = getReplaceUrlList(parseResult, from, to);
   changeUrlList.sort((a, b) => b.begin - a.begin);
   changeUrlList.forEach((e) => {
@@ -65,91 +65,152 @@ function getReplaceUrlList(json: any, from: string, to: string): editUrl[] {
   return editUrls;
 }
 
-async function writeToFile(folderUri: vscode.Uri, todoTitle: string, contents: any, body: string) {
-  const title = "# " + (contents?.attributes?.title ?? todoTitle);
-  const header = "---\n" + contents?.frontmatter + "\n---" ?? "";
+async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any, title: string, body: string) {
   // TODO: change new line character
   const writeStr = header + "\n" + title + "\n" + body;
   const writeData = Buffer.from(writeStr, "utf-8");
-
-  const fileName = sanitize(contents?.attributes?.fileName ?? title + ".md");
-  const fileUri = folderUri.with({
-    path: posix.join(folderUri.path, fileName),
-  });
+  const fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
   await vscode.workspace.fs.createDirectory(folderUri);
-
   await vscode.workspace.fs.writeFile(fileUri, writeData);
 }
 
-function detectCompletedTodoRange(editor: vscode.TextEditor): vscode.Range | null {
-  if (editor.selection.active.line >= editor.document.lineCount - 1) {
-    // no content
-    return null;
+function isTodo(element: any): boolean {
+  if (element?.type === "listItem" && element?.checked !== null) {
+    return true;
   }
-  const start = editor.selection.active.line + 1;
-  let end;
-  let endLineLength;
-  for (let i = start; i < editor.document.lineCount; i++) {
-    const line = editor.document.lineAt(i).text;
-    // TODO: improve todo range detection rule
-    if (line.startsWith("- [ ]") || line.startsWith("- [x]")) {
-      if (i == start) {
-        // no content
+  return false;
+}
+
+function getCurrentLineLevel(flattenParsedMarkDown: any[], currentLineNumberFrom1: number) {
+  let level = -1;
+  for (let element of flattenParsedMarkDown) {
+    if (
+      element?.position?.start.line &&
+      element?.position?.start.line <= currentLineNumberFrom1 &&
+      element?.position?.end.line &&
+      element?.position?.end.line >= currentLineNumberFrom1 &&
+      element?.level !== null
+    ) {
+      level = element.level > level ? element.level : level;
+    }
+  }
+  return level;
+}
+
+function detectCompletedTodoRange(
+  flattenParsedMarkDown: any[],
+  currentLineNumberFrom1: number,
+  editor: vscode.TextEditor,
+  rangeDetectionMode: "strict" | "next-todo"
+): vscode.Range | null {
+  let startLineFrom1 = -1;
+  let startLineLevel = -1;
+  let endLineFrom1 = -1;
+  let startLineIsChecked = false;
+  const currentLineLevel = getCurrentLineLevel(flattenParsedMarkDown, currentLineNumberFrom1);
+  for (let element of flattenParsedMarkDown) {
+    if (element.position.start.line <= currentLineNumberFrom1) {
+      // start position detection
+      if (isTodo(element) && element.level <= currentLineLevel) {
+        startLineFrom1 = element.position.start.line;
+        startLineLevel = element.level;
+        startLineIsChecked = element.checked;
+      }
+    } else {
+      // end position detection
+      if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked === null) {
         return null;
       }
-
-      end = i;
-      endLineLength = 0;
-      break;
+      if (rangeDetectionMode === "strict") {
+        if (element.level < startLineLevel) {
+          endLineFrom1 = element.position.start.line - 1;
+          break;
+        }
+        if (isTodo(element) && element.level == startLineLevel) {
+          endLineFrom1 = element.position.start.line - 1;
+          break;
+        }
+      } else if (rangeDetectionMode === "next-todo") {
+        if (element.level <= startLineLevel && isTodo(element)) {
+          endLineFrom1 = element.position.start.line - 1;
+          break;
+        }
+      }
     }
-    end = i;
-    endLineLength = line.length;
   }
-  if (end != null && endLineLength != null) {
-    return new vscode.Range(new vscode.Position(start, 0), new vscode.Position(end, endLineLength));
+
+  if (startLineFrom1 < 0 || startLineIsChecked || startLineIsChecked === null) {
+    return null;
   }
-  return null;
+  if (endLineFrom1 < 0) {
+    // end line is last line of file
+    endLineFrom1 = editor.document.lineCount;
+  }
+
+  const endLineLength = editor.document.lineAt(endLineFrom1 - 1).text.length;
+  return new vscode.Range(new vscode.Position(startLineFrom1 - 1, 0), new vscode.Position(endLineFrom1 - 1, endLineLength));
+}
+
+function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) {
+  parsed.level = level;
+  elementsList.push(parsed);
+  if (parsed?.children) {
+    [...parsed.children].forEach((e) => {
+      flattenParsedMarkDown(elementsList, e, level + 1);
+    });
+  }
+  return elementsList;
 }
 
 export async function completeTodo() {
   const editor = vscode.window.activeTextEditor;
-  if (editor) {
-    try {
-      const currentLine = editor.document.lineAt(editor.selection.active.line);
-      const newLine = currentLine.text.replace(/^- \[ \]/, "- [x]");
-      if (!currentLine.text.startsWith("- [ ]")) {
-        return;
-      }
-      const range = detectCompletedTodoRange(editor);
-      if (range) {
-        const title = currentLine.text.replace(/^- \[ \]\s*/, "");
-        const text = editor.document.getText(range);
-        const contents = frontMatter(text);
+  if (!editor) {
+    return;
+  }
+  try {
+    const currentLineNumber = editor.selection.active.line;
+    const currentLineNumberFrom1 = currentLineNumber + 1;
+    const activeDocumentText = editor.document.getText();
+    const parseResult = unified().use(remarkParse).use(remarkGfm).parse(activeDocumentText);
+    const flattenParsedResult: any[] = flattenParsedMarkDown([], parseResult, 0);
+    flattenParsedResult.sort((a, b) => a.position.start.line - b.position.start.line);
 
-        const configurations = vscode.workspace.getConfiguration("todo-notes");
-        if (!vscode.workspace.workspaceFolders) {
-          vscode.window.showErrorMessage("No folder or workspace opened");
-          throw new Error("Failed to create file because no folder or workspace opened.");
-        }
+    const configurations = vscode.workspace.getConfiguration("todoNotes");
+    if (!vscode.workspace.workspaceFolders) {
+      vscode.window.showErrorMessage("No folder or workspace opened");
+      throw new Error("Failed to create file because no folder or workspace opened.");
+    }
+    const rangeDetectionMode: "strict" | "next-todo" = configurations.get("rangeDetectionMode") === "strict" ? "strict" : "next-todo";
+    const todoRange = detectCompletedTodoRange(flattenParsedResult, currentLineNumberFrom1, editor, rangeDetectionMode);
+
+    if (todoRange) {
+      const todoLine = editor.document.lineAt(todoRange.start.line);
+      let todoContentsRange: vscode.Range | null = null;
+      if (todoRange.end.line > todoRange.start.line) {
+        todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
+        const text = editor.document.getText(todoContentsRange);
+        const yamlHeader = frontMatter(text);
+        const folderPath: string = yamlHeader?.attributes?.folderPath ?? configurations.get("saveNotesPath") ?? "";
+        const header = yamlHeader?.frontmatter ? "---\n" + yamlHeader.frontmatter + "\n---" : "";
+        const title = yamlHeader?.attributes?.title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "");
+        const fileName = sanitize(yamlHeader?.attributes?.fileName ?? title + ".md");
         const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
-        const folderPath: string = contents?.attributes?.folderPath ?? configurations.get("saveNotesPath") ?? "";
-        const folderUri = workspaceFolderUri.with({
-          path: posix.join(workspaceFolderUri.path, folderPath),
-        });
-
+        const folderUri = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
         const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
         const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
-        const body = replaceUrl(contents.body, fromDir, folderUri.path);
-        await writeToFile(folderUri, title, contents, body);
+        const body = yamlHeader?.body !== null ? replaceUrl(yamlHeader.body, fromDir, folderUri.path) : "";
+        await writeToFile(folderUri, fileName, header, "# " + title, body);
       }
+
       editor.edit((e) => {
-        e.replace(currentLine.range, newLine);
-        if (range) {
-          e.delete(range);
+        const newLine = todoLine.text.replace(/- \[ \]/, "- [x]");
+        e.replace(todoLine.range, newLine);
+        if (todoContentsRange) {
+          e.delete(todoContentsRange);
         }
       });
-    } catch (e) {
-      vscode.window.showErrorMessage("Failed to write notes to file");
     }
+  } catch (e) {
+    vscode.window.showErrorMessage("Failed to write notes to file");
   }
 }

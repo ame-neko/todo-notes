@@ -87,6 +87,18 @@
         "todoNotes.saveNotesPath": {
           "type": "string",
           "description": "Path to directory where notes will be saved."
+        },
+        "todoNotes.rangeDetectionMode": {
+          "type": "string",
+          "default": "strict",
+          "enum": [
+            "strict",
+            "next-todo"
+          ],
+          "description": [
+            "Path to directory where notes will be saved.",
+            "Path to directory where notes will be saved."
+          ]
         }
       }
     },
@@ -122,6 +134,7 @@
   },
   "dependencies": {
     "front-matter": "^4.0.2",
+    "remark-gfm": "1.0.0",
     "remark-parse": "9.0.0",
     "sanitize-filename": "^1.6.3",
     "unified": "9.2.2"
