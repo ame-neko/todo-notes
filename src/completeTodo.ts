@@ -19,13 +19,8 @@ function replaceUrl(text: string, from: string, to: string) {
   const changeUrlList: editUrl[] = getReplaceUrlList(parseResult, from, to);
   changeUrlList.sort((a, b) => b.begin - a.begin);
   changeUrlList.forEach((e) => {
-    const partialText = text
-      .substring(e.begin, e.end)
-      .replace(e.oldUrl, e.newUrl);
-    text =
-      text.substring(0, e.begin) +
-      partialText +
-      text.substring(e.end, text.length);
+    const partialText = text.substring(e.begin, e.end).replace(e.oldUrl, e.newUrl);
+    text = text.substring(0, e.begin) + partialText + text.substring(e.end, text.length);
   });
   return text;
 }
@@ -51,7 +46,7 @@ function getReplaceUrlList(json: any, from: string, to: string): editUrl[] {
       if (path.isAbsolute(oldUrl)) {
         return;
       }
-      if (isURL(oldUrl)){
+      if (isURL(oldUrl)) {
         return;
       }
 
@@ -70,12 +65,7 @@ function getReplaceUrlList(json: any, from: string, to: string): editUrl[] {
   return editUrls;
 }
 
-async function writeToFile(
-  folderUri: vscode.Uri,
-  todoTitle: string,
-  contents: any,
-  body: string
-) {
+async function writeToFile(folderUri: vscode.Uri, todoTitle: string, contents: any, body: string) {
   const title = "# " + (contents?.attributes?.title ?? todoTitle);
   const header = "---\n" + contents?.frontmatter + "\n---" ?? "";
   // TODO: change new line character
@@ -91,9 +81,7 @@ async function writeToFile(
   await vscode.workspace.fs.writeFile(fileUri, writeData);
 }
 
-function detectCompletedTodoRange(
-  editor: vscode.TextEditor
-): vscode.Range | null {
+function detectCompletedTodoRange(editor: vscode.TextEditor): vscode.Range | null {
   if (editor.selection.active.line >= editor.document.lineCount - 1) {
     // no content
     return null;
@@ -118,10 +106,7 @@ function detectCompletedTodoRange(
     endLineLength = line.length;
   }
   if (end != null && endLineLength != null) {
-    return new vscode.Range(
-      new vscode.Position(start, 0),
-      new vscode.Position(end, endLineLength)
-    );
+    return new vscode.Range(new vscode.Position(start, 0), new vscode.Position(end, endLineLength));
   }
   return null;
 }
@@ -144,24 +129,16 @@ export async function completeTodo() {
         const configurations = vscode.workspace.getConfiguration("todo-notes");
         if (!vscode.workspace.workspaceFolders) {
           vscode.window.showErrorMessage("No folder or workspace opened");
-          throw new Error(
-            "Failed to create file because no folder or workspace opened."
-          );
+          throw new Error("Failed to create file because no folder or workspace opened.");
         }
         const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
-        const folderPath: string =
-          contents?.attributes?.folderPath ??
-          configurations.get("saveNotesPath") ??
-          "";
+        const folderPath: string = contents?.attributes?.folderPath ?? configurations.get("saveNotesPath") ?? "";
         const folderUri = workspaceFolderUri.with({
           path: posix.join(workspaceFolderUri.path, folderPath),
         });
 
-        const currentFilePath =
-          vscode.window.activeTextEditor?.document.fileName;
-        const fromDir = currentFilePath
-          ? path.dirname(currentFilePath)
-          : workspaceFolderUri.path;
+        const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
+        const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
         const body = replaceUrl(contents.body, fromDir, folderUri.path);
         await writeToFile(folderUri, title, contents, body);
       }

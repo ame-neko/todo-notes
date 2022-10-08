@@ -8,10 +8,7 @@ export class Element extends vscode.TreeItem {
   name: string;
   filePath: string | null;
   constructor(type: "tag" | "file", name: string, filePath: string | null) {
-    const collapsibleState: vscode.TreeItemCollapsibleState =
-      type === "tag"
-        ? vscode.TreeItemCollapsibleState.Collapsed
-        : vscode.TreeItemCollapsibleState.None;
+    const collapsibleState: vscode.TreeItemCollapsibleState = type === "tag" ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None;
     super(name, collapsibleState);
     this.type = type;
     this.name = name;
@@ -31,12 +28,8 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     this.tagToElements = {};
   }
 
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    Element | undefined | null | void
-  > = new vscode.EventEmitter<Element | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<
-    Element | undefined | null | void
-  > = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: vscode.EventEmitter<Element | undefined | null | void> = new vscode.EventEmitter<Element | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<Element | undefined | null | void> = this._onDidChangeTreeData.event;
   refresh(): void {
     this.tagToElements = {};
     this._onDidChangeTreeData.fire();
@@ -146,8 +139,6 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
         }
       })
     );
-    return texts
-      .filter((v) => typeof v === "string")
-      .join("\n\n* * * * * * * * * * * * * * *\n\n");
+    return texts.filter((v) => typeof v === "string").join("\n\n* * * * * * * * * * * * * * *\n\n");
   }
 }
