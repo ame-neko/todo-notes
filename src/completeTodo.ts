@@ -1,7 +1,8 @@
 import { posix } from "path";
 import * as vscode from "vscode";
+import sanitize = require("sanitize-filename");
 
-async function writeToFile(lines: string[]) {
+async function writeToFile(title: string, lines: string[]) {
   const configurations = vscode.workspace.getConfiguration("todo-notes");
   const folderPath: string = configurations.get("saveNotesPath") ?? "";
   if (!vscode.workspace.workspaceFolders) {
@@ -11,14 +12,15 @@ async function writeToFile(lines: string[]) {
     );
   }
   // TODO: change new line character
-  const writeStr = lines.join("\n");
+  const writeStr = "# " + title + "\n" + lines.join("\n");
   const writeData = Buffer.from(writeStr, "utf-8");
   const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
   const folderUri = workspaceFolderUri.with({
     path: posix.join(workspaceFolderUri.path, folderPath),
   });
+  const fileName = sanitize(title + ".md");
   const fileUri = folderUri.with({
-    path: posix.join(folderUri.path, "test.txt"),
+    path: posix.join(folderUri.path, fileName),
   });
   await vscode.workspace.fs.createDirectory(folderUri);
 
@@ -83,8 +85,9 @@ export async function completeTodo() {
       }
       const range = detectCompletedTodoRange(editor);
       if (range) {
+        const title = currentLine.text.replace(/^- \[ \]\s*/, "");
         const lines = getTodoContents(editor, range);
-        await writeToFile(lines);
+        await writeToFile(title, lines);
       }
       editor.edit((e) => {
         e.replace(currentLine.range, newLine);
