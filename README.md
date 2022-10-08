@@ -6,7 +6,7 @@ Manage todo and take notes in markdown.
 
 * Move todo contents to notes directory when the todo task is completed.  
   By using the `Complete Todo and Copy to Notes` command (`ctrl+d` or `cmd+d`), the contents of the checkbox at the cursor's location are copied to the notebook.
-  ![](https://github.com/pixel-png/todo-notes/blob/master/images/complete-todo-explanation.gif)
+  ![](https://github.com/ame-neko/todo-notes/blob/master/images/complete-todo-explanation.gif)
   
 * Links to image files are automatically updated.  
 * Metadata can be added to each todo task. Metadata is converted to yaml front matter in the destination note.  
@@ -17,7 +17,7 @@ Manage todo and take notes in markdown.
     - `[metadata]: # (Title: )`: Title of note markdown. The title will be inserted on the first line of the note. Default is the text of checkbox.
     - `[metadata]: # (FileName: )`: File name of note where todo contents will be copied.
     - `[metadata]: # (FolderPath: )`: Specify the path from workspace where note file will be created (Default: The value of `todoNotes.saveNotesPath` setting).
-  ![](https://github.com/pixel-png/todo-notes/blob/master/images/metadata-explanation.gif)
+  ![](https://github.com/ame-neko/todo-notes/blob/master/images/metadata-explanation.gif)
 * Tree view is generated based on the tags of each notes.  
     Tags need to be specified in yaml front matter of each note files.  
     For example:
@@ -28,7 +28,7 @@ Manage todo and take notes in markdown.
     YOUR NOTES CONTENTS
     ```
 * You can generate a virtual document that contains the contents of all notes for a given tag.
-  ![](https://github.com/pixel-png/todo-notes/blob/master/images/tag-tree-explanation.gif)
+  ![](https://github.com/ame-neko/todo-notes/blob/master/images/tag-tree-explanation.gif)
 
 ## Keybindings
 * `ctrl+k` (`cmd+k`): Add new checkbox with template.
