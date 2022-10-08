@@ -5,17 +5,9 @@ import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify } from "yaml";
 import * as os from "os";
-const frontMatter = require("front-matter");
 const unified = require("unified");
 const remarkParse = require("remark-parse");
 const remarkGfm = require("remark-gfm");
-
-interface editUrl {
-  begin: number;
-  end: number;
-  oldUrl: string;
-  newUrl: string;
-}
 
 interface yamlMetadata {
   folderPath?: string;
@@ -28,13 +20,32 @@ const EOL = os.EOL;
 
 function replaceUrl(text: string, from: string, to: string) {
   const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
-  const changeUrlList: editUrl[] = getReplaceUrlList(parseResult, from, to);
-  changeUrlList.sort((a, b) => b.begin - a.begin);
-  changeUrlList.forEach((e) => {
-    const partialText = text.substring(e.begin, e.end).replace(e.oldUrl, e.newUrl);
-    text = text.substring(0, e.begin) + partialText + text.substring(e.end, text.length);
+  const flattenParsedResult: any[] = flattenParsedMarkDown([], parseResult, 0);
+  flattenParsedResult.sort((a, b) => a.position.start.line - b.position.start.line);
+
+  const newTextList = [];
+  let currentIndex = 0;
+  flattenParsedResult.forEach((element: any) => {
+    if (element?.type === "image") {
+      const oldUrl = element.url;
+      if (path.isAbsolute(oldUrl)) {
+        return;
+      }
+      if (isURL(oldUrl)) {
+        return;
+      }
+      const newUrl = path.join(path.relative(to, from), oldUrl);
+      const begin = element.position.start.offset;
+      const end = element.position.end.offset;
+
+      newTextList.push(text.substring(currentIndex, begin));
+      newTextList.push(text.substring(begin, end).replace(oldUrl, newUrl));
+      currentIndex = end;
+    }
   });
-  return text;
+  newTextList.push(text.substring(currentIndex, text.length));
+
+  return newTextList.join("");
 }
 
 function isURL(pathStr: string) {
@@ -44,37 +55,6 @@ function isURL(pathStr: string) {
   } catch {
     return false;
   }
-}
-
-function getReplaceUrlList(json: any, from: string, to: string): editUrl[] {
-  const editUrls: editUrl[] = [];
-  if (!json?.children) {
-    return [];
-  }
-  const children: any[] = json.children;
-  children.forEach((element: any) => {
-    if (element?.type === "image") {
-      const oldUrl = element.url;
-      if (path.isAbsolute(oldUrl)) {
-        return;
-      }
-      if (isURL(oldUrl)) {
-        return;
-      }
-
-      const newUrl = path.join(path.relative(to, from), oldUrl);
-      editUrls.push({
-        begin: element.position.start.offset,
-        end: element.position.end.offset,
-        oldUrl: oldUrl,
-        newUrl: newUrl,
-      });
-    }
-    if (element?.children) {
-      editUrls.push(...getReplaceUrlList(element, from, to));
-    }
-  });
-  return editUrls;
 }
 
 async function writeToFile(folderUri: vscode.Uri, fileName: string, header: any, title: string, body: string) {
@@ -92,9 +72,9 @@ function isTodo(element: any): boolean {
   return false;
 }
 
-function getCurrentLineLevel(flattenParsedMarkDown: any[], currentLineNumberFrom1: number) {
+function getCurrentLineLevel(flattenParsedResult: any[], currentLineNumberFrom1: number) {
   let level = -1;
-  for (const element of flattenParsedMarkDown) {
+  for (const element of flattenParsedResult) {
     if (
       element?.position?.start.line &&
       element?.position?.start.line <= currentLineNumberFrom1 &&
@@ -109,7 +89,7 @@ function getCurrentLineLevel(flattenParsedMarkDown: any[], currentLineNumberFrom
 }
 
 function detectCompletedTodoRange(
-  flattenParsedMarkDown: any[],
+  flattenParsedResult: any[],
   currentLineNumberFrom1: number,
   editor: vscode.TextEditor,
   rangeDetectionMode: "strict" | "next-todo"
@@ -118,8 +98,8 @@ function detectCompletedTodoRange(
   let startLineLevel = -1;
   let endLineFrom1 = -1;
   let startLineIsChecked = false;
-  const currentLineLevel = getCurrentLineLevel(flattenParsedMarkDown, currentLineNumberFrom1);
-  for (const element of flattenParsedMarkDown) {
+  const currentLineLevel = getCurrentLineLevel(flattenParsedResult, currentLineNumberFrom1);
+  for (const element of flattenParsedResult) {
     if (element.position.start.line <= currentLineNumberFrom1) {
       // start position detection
       if (isTodo(element) && element.level <= currentLineLevel) {
@@ -226,7 +206,6 @@ export async function completeTodo() {
       let todoContentsRange: vscode.Range | null = null;
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
-        const text = editor.document.getText(todoContentsRange);
         const metadata = parseYamlMetadata(flattenParsedResult);
         const folderPath: string = metadata.folderPath ?? configurations.get("saveNotesPath") ?? "";
         const metadataStr = stringify(metadata);
@@ -237,8 +216,9 @@ export async function completeTodo() {
         const folderUri = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
         const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
         const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
-        const body = replaceUrl(getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, metadata), fromDir, folderUri.path);
-        await writeToFile(folderUri, fileName, header, "# " + title, body);
+        const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, metadata);
+        const bodyUrlReplaced = replaceUrl(body, fromDir, folderUri.path);
+        await writeToFile(folderUri, fileName, header, "# " + title, bodyUrlReplaced);
       }
 
       editor.edit((e) => {
