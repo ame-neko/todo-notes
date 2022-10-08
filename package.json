@@ -10,7 +10,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:todo-notes.helloWorld"
+    "onCommand:todo-notes.helloWorld",
+    "onCommand:todo-notes.addTodo",
+    "onCommand:todo-notes.completeTodo"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -18,6 +20,14 @@
       {
         "command": "todo-notes.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "todo-notes.addTodo",
+        "title": "Add Todo"
+      },
+      {
+        "command": "todo-notes.completeTodo",
+        "title": "Complete Todo"
       }
     ]
   },

@@ -10,6 +10,21 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "todo-notes" is now active!');
 
+	vscode.commands.registerCommand('todo-notes.addTodo', () => {
+		const TODO_MARKDOWN = "- [ ] "
+		const editor = vscode.window.activeTextEditor;
+		editor?.edit(e => {e.insert(new vscode.Position(editor.selection.active.line, 0), TODO_MARKDOWN)});
+	})
+
+	vscode.commands.registerCommand('todo-notes.completeTodo', () => {
+		const editor = vscode.window.activeTextEditor;
+		if (editor){
+			const currentLine = editor.document.lineAt(editor.selection.active.line)
+			const newLine = currentLine.text.replace(/^- \[ \]/, "- [x]", )
+			editor?.edit(e => {e.replace(currentLine.range, newLine)});
+		}
+	})
+
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
