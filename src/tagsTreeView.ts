@@ -54,7 +54,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     if (element) {
       // children
       if (element.name in this.tagToElements) {
-        return Promise.resolve(this.tagToElements[element.name]);
+        return Promise.resolve(this.tagToElements[element.name].sort());
       } else {
         return Promise.resolve([]);
       }
@@ -117,12 +117,18 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
       })
     );
 
+    // sort files
+    Object.keys(te).forEach((key) => {
+      te[key].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
     this.tagToElements = te;
 
     return Promise.resolve(
-      Object.keys(this.tagToElements).map(
-        (key) => new Element("tag", key, null)
-      )
+      Object.keys(this.tagToElements)
+        // sort tags
+        .sort()
+        .map((key) => new Element("tag", key, null))
     );
   }
 }
