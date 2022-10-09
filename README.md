@@ -43,5 +43,6 @@ This extension contributes the following settings:
 - `todoNotes.saveNotesPath`: Path to directory where notes will be saved.
 - `todoNotes.dateFormat`: Date format used in metaata. For example: yyyy-mm-dd'T'HH:MM:sso"
 - `todoNotes.addCompletionDate`: Add completion date to the yaml front matter of copied notes. (Default: true)
+- `todoNotes.checkNotFileExistence`: Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed. (Default: true)
 - `todoNotes.todoRangeDetectionMode`: Toggle todo range detection mode. strict: Detect todo range strictly following GFM markdwon syntax. next-todo: Todo range continues until next same or higher indent level todo.
 - `todoNotes.eol`: End of Line character of created note.

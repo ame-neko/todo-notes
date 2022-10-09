@@ -9,12 +9,13 @@ const dateFormat = require("dateformat");
 
 const OS_EOL = os.EOL;
 
-interface config {
+export interface extensionConfig {
   EOL: string;
   todoRangeDetectionMode: "strict" | "next-todo";
   saveNotesPath: string;
   dateFormat: string;
   addCompletionDate: boolean;
+  checkNotFileExistence: boolean;
 }
 
 interface indentConfig {
@@ -22,12 +23,13 @@ interface indentConfig {
   tabSize: number;
 }
 
-export function loadConfiguration(): config {
+export function loadConfiguration(): extensionConfig {
   const configurations = vscode.workspace.getConfiguration("todoNotes");
   const todoRangeDetectionMode: "strict" | "next-todo" = configurations.get("todoRangeDetectionMode") === "strict" ? "strict" : "next-todo";
   const saveNotesPath: string = configurations.get("saveNotesPath") ?? "";
   const dateFormat: string = configurations.get("dateFormat") ?? "";
   const addCompletionDate: boolean = configurations.get("addCompletionDate") ?? true;
+  const checkNotFileExistence: boolean = configurations.get("checkNotFileExistence") ?? true;
   let EOL = null;
   switch (configurations.get("eol")) {
     case "LF":
@@ -45,6 +47,7 @@ export function loadConfiguration(): config {
     saveNotesPath: saveNotesPath,
     dateFormat: dateFormat,
     addCompletionDate: addCompletionDate,
+    checkNotFileExistence: checkNotFileExistence,
   };
 }
 
@@ -113,7 +116,7 @@ export function parseMarkdown(text: string) {
   return flattend;
 }
 
-export function getDateStr(config: config): string {
+export function getDateStr(config: extensionConfig): string {
   const now = Date.now();
   return config.dateFormat ? dateFormat(now, config.dateFormat) : dateFormat(new Date());
 }

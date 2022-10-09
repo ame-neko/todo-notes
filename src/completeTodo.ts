@@ -4,7 +4,8 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify } from "yaml";
-import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl } from "./utils";
+import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl, extensionConfig } from "./utils";
+import * as fs from "fs";
 
 interface yamlMetadata {
   FolderPath?: string;
@@ -13,11 +14,19 @@ interface yamlMetadata {
   CompletedDate?: string;
 }
 
-async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string) {
+class FileAlreadyExistError extends Error {}
+
+async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string, config: extensionConfig) {
   const writeStr = header != null ? header + EOL + title + EOL + body : title + EOL + body;
   const writeData = Buffer.from(writeStr, "utf-8");
   const fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
   await vscode.workspace.fs.createDirectory(folderUri);
+  if (config.checkNotFileExistence && fs.existsSync(fileUri.path)) {
+    const answer = await vscode.window.showWarningMessage(`Note file ${fileName} already exist. Do you want to overwrite it?`, "Yes", "No");
+    if (answer !== "Yes") {
+      throw new FileAlreadyExistError(`Destination file ${fileUri.path} already exist.`);
+    }
+  }
   await vscode.workspace.fs.writeFile(fileUri, writeData);
 }
 
@@ -176,8 +185,8 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
       if (todoRange.end.line > todoRange.start.line) {
         todoContentsRange = new vscode.Range(new vscode.Position(todoRange.start.line + 1, todoRange.start.character), todoRange.end);
         if (!isChildTodoCompleted(parsed, todoContentsRange)) {
-          const answer = await vscode.window.showWarningMessage("Uncompleted Todo exist. Do you want to proceed?", "yes", "no");
-          if (answer !== "yes") {
+          const answer = await vscode.window.showWarningMessage("Uncompleted Todo exist. Do you want to proceed?", "Yes", "No");
+          if (answer !== "Yes") {
             return;
           }
         }
@@ -199,7 +208,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           }
           const header = Object.keys(metadata).length > 0 ? "---" + config.EOL + stringify(metadata) + "---" : null;
           //TODO: ask user when the destination note already exist
-          await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);
+          await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL, config);
           vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
         }
       }
@@ -221,6 +230,9 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
       });
     }
   } catch (e) {
+    if (e instanceof FileAlreadyExistError) {
+      return;
+    }
     vscode.window.showErrorMessage("Failed to write notes to file.");
   }
 }

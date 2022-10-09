@@ -123,9 +123,16 @@
           "description": "Date format used in metaata. For example: yyyy-mm-dd'T'HH:MM:sso"
         },
         "todoNotes.addCompletionDate": {
+          "title": "Add completedDate to notes",
           "type": "boolean",
           "default": true,
           "description": "Add completion date to the yaml front matter of copied notes."
+        },
+        "todoNotes.checkNotFileExistence": {
+          "title": "Check note file existence before copy",
+          "type": "boolean",
+          "default": true,
+          "description": "Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed."
         },
         "todoNotes.todoRangeDetectionMode": {
           "type": "string",
