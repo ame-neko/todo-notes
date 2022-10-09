@@ -18,16 +18,32 @@ class FileAlreadyExistError extends Error {}
 
 async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string, config: extensionConfig) {
   const writeStr = header != null ? header + EOL + title + EOL + body : title + EOL + body;
-  const writeData = Buffer.from(writeStr, "utf-8");
-  const fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
   await vscode.workspace.fs.createDirectory(folderUri);
-  if (config.checkNotFileExistence && fs.existsSync(fileUri.path)) {
+
+  let fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
+  if (config.appendMode === "Increment") {
+    let fileNameIndex = 1;
+    const fileNameWithoutExtension = path.parse(fileName).name;
+    const extension = path.parse(fileName).ext;
+    while (fs.existsSync(fileUri.path)) {
+      fileUri = folderUri.with({ path: posix.join(folderUri.path, fileNameWithoutExtension + "-" + fileNameIndex + extension) });
+      fileNameIndex += 1;
+    }
+  } else if (config.appendMode === "Overwrite" && config.checkNotFileExistence && fs.existsSync(fileUri.path)) {
     const answer = await vscode.window.showWarningMessage(`Note file ${fileName} already exist. Do you want to overwrite it?`, "Yes", "No");
     if (answer !== "Yes") {
       throw new FileAlreadyExistError(`Destination file ${fileUri.path} already exist.`);
     }
   }
-  await vscode.workspace.fs.writeFile(fileUri, writeData);
+
+  if (config.appendMode === "Append" && fs.existsSync(fileUri.path)) {
+    const fileData = await vscode.workspace.fs.readFile(fileUri);
+    const writeData = Buffer.concat([fileData, Buffer.from(config.EOL + writeStr, "utf-8")]);
+    await vscode.workspace.fs.writeFile(fileUri, writeData);
+  } else {
+    const writeData = Buffer.from(writeStr, "utf-8");
+    await vscode.workspace.fs.writeFile(fileUri, writeData);
+  }
 }
 
 function isTodo(element: any): boolean {

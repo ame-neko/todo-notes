@@ -160,6 +160,21 @@
             "Use LF as end of line character when copying todo contents to note.",
             "Use CRLF as end of line character when copying todo contents to note."
           ]
+        },
+        "todoNotes.appendMode": {
+          "title": "Append Mode",
+          "type": "string",
+          "default": "Overwrite",
+          "enum": [
+            "Overwrite",
+            "Append",
+            "Increment"
+          ],
+          "description": [
+            "Oveerwrite the note file if already exist.",
+            "Append the todo content to the note file if already exist.",
+            "Change note file name if destination note file already exist. For example: FILENAME-1.md, FILENAME-2.md ..."
+          ]
         }
       }
     },

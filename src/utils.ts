@@ -16,6 +16,7 @@ export interface extensionConfig {
   dateFormat: string;
   addCompletionDate: boolean;
   checkNotFileExistence: boolean;
+  appendMode: "Append" | "Overwrite" | "Increment";
 }
 
 interface indentConfig {
@@ -26,6 +27,8 @@ interface indentConfig {
 export function loadConfiguration(): extensionConfig {
   const configurations = vscode.workspace.getConfiguration("todoNotes");
   const todoRangeDetectionMode: "strict" | "next-todo" = configurations.get("todoRangeDetectionMode") === "strict" ? "strict" : "next-todo";
+  const appendMode: "Append" | "Overwrite" | "Increment" =
+    configurations.get("appendMode") === "Append" ? "Append" : configurations.get("appendMode") === "Increment" ? "Increment" : "Overwrite";
   const saveNotesPath: string = configurations.get("saveNotesPath") ?? "";
   const dateFormat: string = configurations.get("dateFormat") ?? "";
   const addCompletionDate: boolean = configurations.get("addCompletionDate") ?? true;
@@ -48,6 +51,7 @@ export function loadConfiguration(): extensionConfig {
     dateFormat: dateFormat,
     addCompletionDate: addCompletionDate,
     checkNotFileExistence: checkNotFileExistence,
+    appendMode: appendMode,
   };
 }
 
