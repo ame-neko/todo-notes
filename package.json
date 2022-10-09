@@ -1,8 +1,8 @@
 {
   "name": "todo-notes",
   "displayName": "Todo Notes",
-  "description": "",
-  "version": "0.0.2",
+  "description": "Copy the contents of the completed Todo task in Markdown to another file.",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -15,7 +15,6 @@
     "url": "https://github.com/ame-neko/todo-notes.git"
   },
   "icon": "images/icon.png",
-  "discriptions": "Copy the contents of the Todo task in Markdown to another file.",
   "keywords": [
     "notes",
     "todo",
