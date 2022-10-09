@@ -17,7 +17,7 @@ Manage todo and take notes in markdown.
     - `[metadata]: # (Title: )`: Title of note markdown. The title will be inserted on the first line of the note. Default is the text of checkbox.
     - `[metadata]: # (FileName: )`: File name of note where todo contents will be copied.
     - `[metadata]: # (FolderPath: )`: Specify the path from workspace where note file will be created (Default: The value of `todoNotes.saveNotesPath` setting).
-    - `[metadata]: # (AppendMode: )`: Change append mode (`Append`/`Overwrite`/`Increment`) of this todo contents. See [Extension Settings](##Extension-Settings) for details of append mode.
+    - `[metadata]: # (AppendMode: )`: Change append mode (`Append`/`Overwrite`/`Increment`) of this todo contents. See [Extension Settings](#Extension-Settings) for details of append mode.
 
   ![](https://github.com/ame-neko/todo-notes/blob/master/images/metadata-explanation.gif)
 
