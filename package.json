@@ -2,7 +2,7 @@
   "name": "todo-notes",
   "displayName": "Todo Notes",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -15,6 +15,15 @@
     "url": "https://github.com/ame-neko/todo-notes.git"
   },
   "icon": "images/icon.png",
+  "discriptions": "Copy the contents of the Todo task in Markdown to another file.",
+  "keywords": [
+    "notes",
+    "todo",
+    "copy",
+    "tag",
+    "markdown"
+  ],
+  "license": "MIT",
   "activationEvents": [
     "onLanguage:markdown"
   ],
