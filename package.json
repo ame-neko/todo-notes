@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ame-neko/todo-notes.git"
-},
+  },
   "activationEvents": [
     "onLanguage:markdown"
   ],
@@ -118,6 +118,15 @@
           "type": "string",
           "description": "Path to directory where notes will be saved."
         },
+        "todoNotes.dateFormat": {
+          "type": "string",
+          "description": "Date format used in metaata. For example: yyyy-mm-dd'T'HH:MM:sso"
+        },
+        "todoNotes.addCompletionDate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Add completion date to the yaml front matter of copied notes."
+        },
         "todoNotes.todoRangeDetectionMode": {
           "type": "string",
           "default": "strict",
@@ -165,6 +174,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/dateformat": "^5.0.0",
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "16.x",
@@ -178,6 +188,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
+    "dateformat": "4.6.3",
     "front-matter": "^4.0.2",
     "remark-gfm": "1.0.0",
     "remark-parse": "9.0.0",

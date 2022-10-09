@@ -4,12 +4,13 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify } from "yaml";
-import { loadConfiguration, parseMarkdown, replaceUrl } from "./utils";
+import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl } from "./utils";
 
 interface yamlMetadata {
   FolderPath?: string;
   Title?: string;
   FileName?: string;
+  CompletedDate?: string;
 }
 
 async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string) {
@@ -193,6 +194,9 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, lines, config.EOL);
           const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
 
+          if (config.addCompletionDate) {
+            metadata["CompletedDate"] = getDateStr(config);
+          }
           const header = Object.keys(metadata).length > 0 ? "---" + config.EOL + stringify(metadata) + "---" : null;
           //TODO: ask user when the destination note already exist
           await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL);

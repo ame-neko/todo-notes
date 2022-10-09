@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
-import { loadConfiguration, getIndentConfig } from "./utils";
+import { loadConfiguration, getIndentConfig, getDateStr } from "./utils";
 
 export function addTodo() {
   const config = loadConfiguration();
@@ -14,6 +14,7 @@ ${indentChar}[metadata]: # (Tags: [])
 ${indentChar}[metadata]: # (Title: )
 ${indentChar}[metadata]: # (FileName: )
 ${indentChar}[metadata]: # (FolderPath: )
+${indentChar}[metadata]: # (CreatedDate: "${getDateStr(config)}")
 `;
   const editor = vscode.window.activeTextEditor;
   editor?.edit((e) => {

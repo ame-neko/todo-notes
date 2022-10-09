@@ -5,6 +5,7 @@ import * as path from "path";
 const unified = require("unified");
 const remarkParse = require("remark-parse");
 const remarkGfm = require("remark-gfm");
+const dateFormat = require("dateformat");
 
 const OS_EOL = os.EOL;
 
@@ -12,6 +13,8 @@ interface config {
   EOL: string;
   todoRangeDetectionMode: "strict" | "next-todo";
   saveNotesPath: string;
+  dateFormat: string;
+  addCompletionDate: boolean;
 }
 
 interface indentConfig {
@@ -23,6 +26,8 @@ export function loadConfiguration(): config {
   const configurations = vscode.workspace.getConfiguration("todoNotes");
   const todoRangeDetectionMode: "strict" | "next-todo" = configurations.get("todoRangeDetectionMode") === "strict" ? "strict" : "next-todo";
   const saveNotesPath: string = configurations.get("saveNotesPath") ?? "";
+  const dateFormat: string = configurations.get("dateFormat") ?? "";
+  const addCompletionDate: boolean = configurations.get("addCompletionDate") ?? true;
   let EOL = null;
   switch (configurations.get("eol")) {
     case "LF":
@@ -38,6 +43,8 @@ export function loadConfiguration(): config {
     EOL: EOL,
     todoRangeDetectionMode: todoRangeDetectionMode,
     saveNotesPath: saveNotesPath,
+    dateFormat: dateFormat,
+    addCompletionDate: addCompletionDate,
   };
 }
 
@@ -53,7 +60,6 @@ export function getIndentConfig(defaultSize = 4, defaultUseSpace = true): indent
 
 export function replaceUrl(text: string, from: string, to: string) {
   const flattened = parseMarkdown(text);
-  console.log("from: " + from + ", to: " + to + ", relative: "+ path.relative(to, from))
   const newTextList = [];
   let currentIndex = 0;
   flattened.forEach((element: any) => {
@@ -65,7 +71,6 @@ export function replaceUrl(text: string, from: string, to: string) {
       if (isURL(oldUrl)) {
         return;
       }
-  console.log("oldUrl: "+ oldUrl + ", join: " +path.join(path.relative(to, from), oldUrl))
 
       const newUrl = path.join(path.relative(to, from), oldUrl);
       const begin = element.position.start.offset;
@@ -101,10 +106,14 @@ function isURL(pathStr: string) {
   }
 }
 
-
 export function parseMarkdown(text: string) {
   const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
   const flattend: any[] = flattenParsedMarkDown([], parseResult, 0);
   flattend.sort((a, b) => a.position.start.line - b.position.start.line);
   return flattend;
+}
+
+export function getDateStr(config: config): string {
+  const now = Date.now();
+  return config.dateFormat ? dateFormat(now, config.dateFormat) : dateFormat(new Date());
 }
