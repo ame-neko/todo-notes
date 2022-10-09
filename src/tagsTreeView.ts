@@ -2,7 +2,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { loadConfiguration } from "./utils";
+import { loadConfiguration, replaceUrl } from "./utils";
 const frontMatter = require("front-matter");
 
 export class Element extends vscode.TreeItem {
@@ -95,6 +95,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   }
 
   async getAllTags() {
+    //TODO: only check notes directory
     const elements = await this.walk(this.workspaceRoot);
     const te: { [key: string]: Element[] } = {};
     await Promise.all(
@@ -129,7 +130,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   }
 
   // TODO: modify image uri
-  async createVirtualDocument(uri: vscode.Uri): Promise<string> {
+  async createVirtualDocument(uri: vscode.Uri, destinationPath: string | null): Promise<string> {
     const config = loadConfiguration();
     const tag = uri.path;
     if (!this.tagToElements[tag]) {
@@ -138,7 +139,9 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     const texts = await Promise.all(
       this.tagToElements[tag]?.map((element) => {
         if (element.filePath) {
-          return fs.promises.readFile(element.filePath, "utf-8");
+          return fs.promises.readFile(element.filePath, "utf-8").then((text) => {
+            return element.filePath && destinationPath != null ? replaceUrl(text, path.dirname(element.filePath), destinationPath) : text;
+          });
         }
       })
     );

@@ -4,52 +4,12 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify } from "yaml";
-import { loadConfiguration } from "./utils";
-const unified = require("unified");
-const remarkParse = require("remark-parse");
-const remarkGfm = require("remark-gfm");
+import { loadConfiguration, parseMarkdown, replaceUrl } from "./utils";
 
 interface yamlMetadata {
   FolderPath?: string;
   Title?: string;
   FileName?: string;
-}
-
-function replaceUrl(text: string, from: string, to: string) {
-  const flattened = parseMarkdown(text);
-
-  const newTextList = [];
-  let currentIndex = 0;
-  flattened.forEach((element: any) => {
-    if (element?.type === "image") {
-      const oldUrl = element.url;
-      if (path.isAbsolute(oldUrl)) {
-        return;
-      }
-      if (isURL(oldUrl)) {
-        return;
-      }
-      const newUrl = path.join(path.relative(to, from), oldUrl);
-      const begin = element.position.start.offset;
-      const end = element.position.end.offset;
-
-      newTextList.push(text.substring(currentIndex, begin));
-      newTextList.push(text.substring(begin, end).replace(oldUrl, newUrl));
-      currentIndex = end;
-    }
-  });
-  newTextList.push(text.substring(currentIndex, text.length));
-
-  return newTextList.join("");
-}
-
-function isURL(pathStr: string) {
-  try {
-    new URL(pathStr);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string) {
@@ -138,24 +98,6 @@ function detectCompletedTodoRange(
 
   const endLineLength = editor.document.lineAt(endLineFrom1 - 1).text.length;
   return new vscode.Range(new vscode.Position(startLineFrom1 - 1, 0), new vscode.Position(endLineFrom1 - 1, endLineLength));
-}
-
-function parseMarkdown(text: string) {
-  const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
-  const flattend: any[] = flattenParsedMarkDown([], parseResult, 0);
-  flattend.sort((a, b) => a.position.start.line - b.position.start.line);
-  return flattend;
-}
-
-function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) {
-  parsed.level = level;
-  elementsList.push(parsed);
-  if (parsed?.children) {
-    [...parsed.children].forEach((e) => {
-      flattenParsedMarkDown(elementsList, e, level + 1);
-    });
-  }
-  return elementsList;
 }
 
 function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { metadata: yamlMetadata; lines: number[] } {

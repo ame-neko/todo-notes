@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
 import * as os from "os";
+import * as path from "path";
+const unified = require("unified");
+const remarkParse = require("remark-parse");
+const remarkGfm = require("remark-gfm");
+
 const OS_EOL = os.EOL;
 
 interface config {
@@ -44,4 +49,62 @@ export function getIndentConfig(defaultSize = 4, defaultUseSpace = true): indent
     useSpace: typeof useSpace === "boolean" ? useSpace : useSpace === "true",
     tabSize: typeof activeTextTabSize === "number" ? activeTextTabSize : parseInt(activeTextTabSize),
   };
+}
+
+export function replaceUrl(text: string, from: string, to: string) {
+  const flattened = parseMarkdown(text);
+  console.log("from: " + from + ", to: " + to + ", relative: "+ path.relative(to, from))
+  const newTextList = [];
+  let currentIndex = 0;
+  flattened.forEach((element: any) => {
+    if (element?.type === "image") {
+      const oldUrl = element.url;
+      if (path.isAbsolute(oldUrl)) {
+        return;
+      }
+      if (isURL(oldUrl)) {
+        return;
+      }
+  console.log("oldUrl: "+ oldUrl + ", join: " +path.join(path.relative(to, from), oldUrl))
+
+      const newUrl = path.join(path.relative(to, from), oldUrl);
+      const begin = element.position.start.offset;
+      const end = element.position.end.offset;
+
+      newTextList.push(text.substring(currentIndex, begin));
+      newTextList.push(text.substring(begin, end).replace(oldUrl, newUrl));
+      currentIndex = end;
+    }
+  });
+  newTextList.push(text.substring(currentIndex, text.length));
+
+  return newTextList.join("");
+}
+
+function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) {
+  parsed.level = level;
+  elementsList.push(parsed);
+  if (parsed?.children) {
+    [...parsed.children].forEach((e) => {
+      flattenParsedMarkDown(elementsList, e, level + 1);
+    });
+  }
+  return elementsList;
+}
+
+function isURL(pathStr: string) {
+  try {
+    new URL(pathStr);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
+export function parseMarkdown(text: string) {
+  const parseResult = unified().use(remarkParse).use(remarkGfm).parse(text);
+  const flattend: any[] = flattenParsedMarkDown([], parseResult, 0);
+  flattend.sort((a, b) => a.position.start.line - b.position.start.line);
+  return flattend;
 }

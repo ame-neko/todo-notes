@@ -8,7 +8,6 @@ import { Element, NotesTagsProvider } from "./tagsTreeView";
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
   const addTodoDisposable = vscode.commands.registerCommand("todo-notes.addTodo", () => {
     addTodo();
   });
@@ -49,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const tagAllDocumentProvider = new (class implements vscode.TextDocumentContentProvider {
       async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        return await provider.createVirtualDocument(uri);
+        return await provider.createVirtualDocument(uri, vscode?.workspace?.workspaceFolders ? vscode?.workspace?.workspaceFolders[0].uri.path : null);
       }
     })();
     const tagAllDocumentProviderDisposable = vscode.workspace.registerTextDocumentContentProvider("tags", tagAllDocumentProvider);
