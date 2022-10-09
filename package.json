@@ -9,6 +9,7 @@
   "categories": [
     "Other"
   ],
+  "publisher": "ame-neko",
   "repository": {
     "type": "git",
     "url": "https://github.com/ame-neko/todo-notes.git"
