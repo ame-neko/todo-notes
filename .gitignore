@@ -1,2 +1,5 @@
 node_modules
 out
+src/test/resources/notes
+src/test/resources/images
+.DS_Store

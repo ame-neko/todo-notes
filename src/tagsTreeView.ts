@@ -95,8 +95,8 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   }
 
   async getAllTags() {
-    //TODO: only check notes directory
-    const elements = await this.walk(this.workspaceRoot);
+    const config = loadConfiguration();
+    const elements = await this.walk(config.saveNotesPath ? path.join(this.workspaceRoot, config.saveNotesPath) : this.workspaceRoot);
     const te: { [key: string]: Element[] } = {};
     await Promise.all(
       elements.map(async (element) => {
@@ -129,7 +129,6 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     );
   }
 
-  // TODO: modify image uri
   async createVirtualDocument(uri: vscode.Uri, destinationPath: string | null): Promise<string> {
     const config = loadConfiguration();
     const tag = uri.path;
