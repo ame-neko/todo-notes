@@ -128,12 +128,6 @@
           "default": true,
           "description": "Add completion date to the yaml front matter of copied notes."
         },
-        "todoNotes.checkNotFileExistence": {
-          "title": "Check note file existence before copy",
-          "type": "boolean",
-          "default": true,
-          "description": "Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed."
-        },
         "todoNotes.todoRangeDetectionMode": {
           "type": "string",
           "default": "strict",
@@ -175,6 +169,12 @@
             "Append the todo content to the note file if already exist.",
             "Change note file name if destination note file already exist. For example: FILENAME-1.md, FILENAME-2.md ..."
           ]
+        },
+        "todoNotes.showDialogueWhenFileExist": {
+          "title": "Show dialogue when note file already exist",
+          "type": "boolean",
+          "default": true,
+          "description": "Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed. Effective only when append mode is \"Overwrite\""
         }
       }
     },

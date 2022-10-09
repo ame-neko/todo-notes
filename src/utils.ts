@@ -15,8 +15,8 @@ export interface extensionConfig {
   saveNotesPath: string;
   dateFormat: string;
   addCompletionDate: boolean;
-  checkNotFileExistence: boolean;
-  appendMode: "Append" | "Overwrite" | "Increment";
+  showDialogueWhenFileExist: boolean;
+  appendMode: "append" | "overwrite" | "increment";
 }
 
 interface indentConfig {
@@ -27,12 +27,12 @@ interface indentConfig {
 export function loadConfiguration(): extensionConfig {
   const configurations = vscode.workspace.getConfiguration("todoNotes");
   const todoRangeDetectionMode: "strict" | "next-todo" = configurations.get("todoRangeDetectionMode") === "strict" ? "strict" : "next-todo";
-  const appendMode: "Append" | "Overwrite" | "Increment" =
-    configurations.get("appendMode") === "Append" ? "Append" : configurations.get("appendMode") === "Increment" ? "Increment" : "Overwrite";
+  const appendMode: extensionConfig["appendMode"] =
+    configurations.get("appendMode") === "Append" ? "append" : configurations.get("appendMode") === "Increment" ? "increment" : "overwrite";
   const saveNotesPath: string = configurations.get("saveNotesPath") ?? "";
   const dateFormat: string = configurations.get("dateFormat") ?? "";
   const addCompletionDate: boolean = configurations.get("addCompletionDate") ?? true;
-  const checkNotFileExistence: boolean = configurations.get("checkNotFileExistence") ?? true;
+  const showDialogueWhenFileExist: boolean = configurations.get("showDialogueWhenFileExist") ?? true;
   let EOL = null;
   switch (configurations.get("eol")) {
     case "LF":
@@ -50,7 +50,7 @@ export function loadConfiguration(): extensionConfig {
     saveNotesPath: saveNotesPath,
     dateFormat: dateFormat,
     addCompletionDate: addCompletionDate,
-    checkNotFileExistence: checkNotFileExistence,
+    showDialogueWhenFileExist: showDialogueWhenFileExist,
     appendMode: appendMode,
   };
 }

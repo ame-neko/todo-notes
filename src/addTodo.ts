@@ -29,6 +29,7 @@ ${currentCursolIndent}${indent}[metadata]: # (Tags: [])
 ${currentCursolIndent}${indent}[metadata]: # (Title: )
 ${currentCursolIndent}${indent}[metadata]: # (FileName: )
 ${currentCursolIndent}${indent}[metadata]: # (FolderPath: )
+${currentCursolIndent}${indent}[metadata]: # (AppendMode: )
 ${currentCursolIndent}${indent}[metadata]: # (CreatedDate: "${getDateStr(config)}")
 `;
   editor?.edit((e) => {

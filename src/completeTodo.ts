@@ -12,16 +12,33 @@ interface yamlMetadata {
   Title?: string;
   FileName?: string;
   CompletedDate?: string;
+  AppendMode?: string;
 }
 
 class FileAlreadyExistError extends Error {}
 
-async function writeToFile(folderUri: vscode.Uri, fileName: string, header: string | null, title: string, body: string, EOL: string, config: extensionConfig) {
+async function writeToFile(
+  folderUri: vscode.Uri,
+  folderPath: string,
+  fileName: string,
+  header: string | null,
+  title: string,
+  body: string,
+  EOL: string,
+  config: extensionConfig,
+  metadataAppendMode?: string
+) {
   const writeStr = header != null ? header + EOL + title + EOL + body : title + EOL + body;
-  await vscode.workspace.fs.createDirectory(folderUri);
+  let appendMode: extensionConfig["appendMode"] = config.appendMode;
+  const metadataAppendModeLower = metadataAppendMode?.toLocaleLowerCase();
+  if (metadataAppendModeLower && (metadataAppendModeLower === "append" || metadataAppendModeLower === "overwrite" || metadataAppendModeLower === "increment")) {
+    appendMode = metadataAppendModeLower;
+  }
 
+  await vscode.workspace.fs.createDirectory(folderUri);
   let fileUri = folderUri.with({ path: posix.join(folderUri.path, fileName) });
-  if (config.appendMode === "Increment") {
+
+  if (appendMode === "increment") {
     let fileNameIndex = 1;
     const fileNameWithoutExtension = path.parse(fileName).name;
     const extension = path.parse(fileName).ext;
@@ -29,20 +46,22 @@ async function writeToFile(folderUri: vscode.Uri, fileName: string, header: stri
       fileUri = folderUri.with({ path: posix.join(folderUri.path, fileNameWithoutExtension + "-" + fileNameIndex + extension) });
       fileNameIndex += 1;
     }
-  } else if (config.appendMode === "Overwrite" && config.checkNotFileExistence && fs.existsSync(fileUri.path)) {
+  } else if (appendMode === "overwrite" && config.showDialogueWhenFileExist && fs.existsSync(fileUri.path)) {
     const answer = await vscode.window.showWarningMessage(`Note file ${fileName} already exist. Do you want to overwrite it?`, "Yes", "No");
     if (answer !== "Yes") {
       throw new FileAlreadyExistError(`Destination file ${fileUri.path} already exist.`);
     }
   }
 
-  if (config.appendMode === "Append" && fs.existsSync(fileUri.path)) {
+  if (appendMode === "append" && fs.existsSync(fileUri.path)) {
     const fileData = await vscode.workspace.fs.readFile(fileUri);
     const writeData = Buffer.concat([fileData, Buffer.from(config.EOL + writeStr, "utf-8")]);
     await vscode.workspace.fs.writeFile(fileUri, writeData);
+    vscode.window.showInformationMessage(`Todo content has been appended to "${folderPath + "/" + fileName}".`);
   } else {
     const writeData = Buffer.from(writeStr, "utf-8");
     await vscode.workspace.fs.writeFile(fileUri, writeData);
+    vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
   }
 }
 
@@ -224,8 +243,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           }
           const header = Object.keys(metadata).length > 0 ? "---" + config.EOL + stringify(metadata) + "---" : null;
           //TODO: ask user when the destination note already exist
-          await writeToFile(toDir, fileName, header, "# " + title, bodyUrlReplaced, config.EOL, config);
-          vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
+          await writeToFile(toDir, folderPath, fileName, header, "# " + title, bodyUrlReplaced, config.EOL, config, metadata.AppendMode);
         }
       }
 
