@@ -124,3 +124,13 @@ export function getDateStr(config: extensionConfig): string {
   const now = Date.now();
   return config.dateFormat ? dateFormat(now, config.dateFormat) : dateFormat(new Date());
 }
+
+export function stringHashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str.charCodeAt(i);
+    hash = hash * 31 + charCode;
+    hash = hash | 0;
+  }
+  return hash;
+}

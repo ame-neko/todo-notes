@@ -2,8 +2,10 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { loadConfiguration, replaceUrl } from "./utils";
+import { loadConfiguration, replaceUrl, stringHashCode } from "./utils";
 const frontMatter = require("front-matter");
+
+const COLOR_IDS = ["charts.red", "charts.blue", "charts.yellow", "charts.orange", "charts.green", "charts.purple"];
 
 export class Element extends vscode.TreeItem {
   type: "tag" | "file";
@@ -17,10 +19,14 @@ export class Element extends vscode.TreeItem {
     this.filePath = filePath;
     this.contextValue = type;
     if (type === "tag") {
-      this.iconPath = new vscode.ThemeIcon("tag");
+      this.iconPath = new vscode.ThemeIcon("tag", new vscode.ThemeColor(this.getColorId(name)));
     } else {
       this.iconPath = new vscode.ThemeIcon("file");
     }
+  }
+
+  getColorId(name: string): string {
+    return COLOR_IDS[Math.abs(stringHashCode(name) % COLOR_IDS.length)];
   }
 }
 
