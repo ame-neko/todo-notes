@@ -22,7 +22,7 @@ ${currentCursolIndent}${indent}[metadata]: # (FileName: )
 ${currentCursolIndent}${indent}[metadata]: # (FolderPath: )
 ${currentCursolIndent}${indent}[metadata]: # (AppendMode: )
 ${currentCursolIndent}${indent}[metadata]: # (CreatedDate: "${getDateStr(config)}")
-`;
+${indent}`;
   editor?.edit((e) => {
     e.insert(new vscode.Position(editor.selection.active.line, 0), insertStr);
   });
