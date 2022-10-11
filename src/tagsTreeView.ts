@@ -18,8 +18,14 @@ export class Element extends vscode.TreeItem {
     this.name = name;
     this.filePath = filePath;
     this.contextValue = type;
+
+    const config = loadConfiguration();
     if (type === "tag") {
-      this.iconPath = new vscode.ThemeIcon("tag", new vscode.ThemeColor(this.getColorId(name)));
+      if (config.colorizeTagIcon) {
+        this.iconPath = new vscode.ThemeIcon("tag", new vscode.ThemeColor(this.getColorId(name)));
+      } else {
+        this.iconPath = new vscode.ThemeIcon("tag");
+      }
     } else {
       this.iconPath = new vscode.ThemeIcon("file");
     }

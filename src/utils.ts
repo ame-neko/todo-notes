@@ -17,6 +17,7 @@ export interface extensionConfig {
   addCompletionDate: boolean;
   showDialogueWhenFileExist: boolean;
   appendMode: "append" | "overwrite" | "increment";
+  colorizeTagIcon: boolean;
 }
 
 interface indentConfig {
@@ -33,6 +34,7 @@ export function loadConfiguration(): extensionConfig {
   const dateFormat: string = configurations.get("dateFormat") ?? "";
   const addCompletionDate: boolean = configurations.get("addCompletionDate") ?? true;
   const showDialogueWhenFileExist: boolean = configurations.get("showDialogueWhenFileExist") ?? true;
+  const colorizeTagIcon: boolean = configurations.get("colorizeTagIcon") ?? true;
   let EOL = null;
   switch (configurations.get("eol")) {
     case "LF":
@@ -52,6 +54,7 @@ export function loadConfiguration(): extensionConfig {
     addCompletionDate: addCompletionDate,
     showDialogueWhenFileExist: showDialogueWhenFileExist,
     appendMode: appendMode,
+    colorizeTagIcon: colorizeTagIcon,
   };
 }
 

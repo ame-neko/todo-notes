@@ -185,6 +185,12 @@
           "type": "boolean",
           "default": true,
           "description": "Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed. Effective only when append mode is \"Overwrite\""
+        },
+        "todoNotes.colorizeTagIcon": {
+          "title": "Colorize tag icon in tree view",
+          "type": "boolean",
+          "default": true,
+          "description": "Colorize tag icon in tags tree view. The color is automatically determined from the hashcode of tag name."
         }
       }
     },

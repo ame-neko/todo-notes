@@ -54,3 +54,4 @@ This extension contributes the following settings:
 - `todoNotes.showDialogueWhenFileExist`: Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed. Effective only when append mode is "Overwrite". (Default: true)
 - `todoNotes.todoRangeDetectionMode`: Toggle todo range detection mode. strict: Detect todo range strictly following GFM markdwon syntax. next-todo: Todo range continues until next same or higher indent level todo.
 - `todoNotes.eol`: End of Line character of created note.
+- `todoNotew.colorizeTagIcon`: Colorize tag icon in tags tree view. The color is automatically determined from the hashcode of tag name.
