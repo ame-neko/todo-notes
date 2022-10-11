@@ -10,20 +10,26 @@ export function addTodo() {
   if (!editor) {
     return;
   }
+  const currentCursorPosition = editor.selection.active;
+  const newPosition = new vscode.Position(currentCursorPosition.line, currentCursorPosition.character + 6);
+
   const currentLine = editor.document.lineAt(editor.selection.active.line).text;
   const indentChar = indentConfig.useSpace ? " " : "\t";
   const numIndent = getIndentOfLine(currentLine, indentChar);
-  const currentCursolIndent = indentChar.repeat(numIndent);
-  const insertStr = `${currentCursolIndent}- [ ] 
+  const currentCursorIndent = indentChar.repeat(numIndent);
+  const insertStr = `- [ ] 
 
-${currentCursolIndent}${indent}[metadata]: # (Tags: [])
-${currentCursolIndent}${indent}[metadata]: # (Title: )
-${currentCursolIndent}${indent}[metadata]: # (FileName: )
-${currentCursolIndent}${indent}[metadata]: # (FolderPath: )
-${currentCursolIndent}${indent}[metadata]: # (AppendMode: )
-${currentCursolIndent}${indent}[metadata]: # (CreatedDate: "${getDateStr(config)}")
+${currentCursorIndent}${indent}[metadata]: # (Tags: [])
+${currentCursorIndent}${indent}[metadata]: # (Title: )
+${currentCursorIndent}${indent}[metadata]: # (FileName: )
+${currentCursorIndent}${indent}[metadata]: # (FolderPath: )
+${currentCursorIndent}${indent}[metadata]: # (AppendMode: )
+${currentCursorIndent}${indent}[metadata]: # (CreatedDate: "${getDateStr(config)}")
 ${indent}`;
-  editor?.edit((e) => {
-    e.insert(new vscode.Position(editor.selection.active.line, 0), insertStr);
+
+  editor.edit((e) => {
+    e.insert(editor.selection.active, insertStr);
   });
+
+  editor.selection = new vscode.Selection(newPosition, newPosition);
 }
