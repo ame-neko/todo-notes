@@ -3,7 +3,7 @@ import { posix } from "path";
 import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
-import { parse, stringify } from "yaml";
+import { parse, stringify, YAMLError } from "yaml";
 import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl, extensionConfig, loadIndentConfig, getIndentOfLine } from "./utils";
 import * as fs from "fs";
 
@@ -283,6 +283,10 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
     if (e instanceof FileAlreadyExistError) {
       return;
     }
-    vscode.window.showErrorMessage("Failed to write notes to file.");
+    if (e instanceof YAMLError) {
+      vscode.window.showErrorMessage("Failed to parse metadata. Please make sure that metadata is written in YAML format.");
+    } else {
+      vscode.window.showErrorMessage("Failed to write notes to file.");
+    }
   }
 }
