@@ -1,28 +1,19 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
-import { loadConfiguration, getIndentConfig, getDateStr } from "./utils";
+import { loadConfiguration, loadIndentConfig, getDateStr, getIndentOfLine } from "./utils";
 
 export function addTodo() {
   const config = loadConfiguration();
-  const indentConfig = getIndentConfig();
+  const indentConfig = loadIndentConfig();
   const indent = indentConfig.useSpace ? " ".repeat(indentConfig.tabSize) : "\t";
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
     return;
   }
   const currentLine = editor.document.lineAt(editor.selection.active.line).text;
-
   const indentChar = indentConfig.useSpace ? " " : "\t";
-  let numIndent = 0;
-  for (let i = 0; i < currentLine.length; i++) {
-    if (currentLine[i] === indentChar) {
-      numIndent += 1;
-    } else {
-      break;
-    }
-  }
+  const numIndent = getIndentOfLine(currentLine, indentChar);
   const currentCursolIndent = indentChar.repeat(numIndent);
-
   const insertStr = `${currentCursolIndent}- [ ] 
 
 ${currentCursolIndent}${indent}[metadata]: # (Tags: [])

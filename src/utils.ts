@@ -58,7 +58,7 @@ export function loadConfiguration(): extensionConfig {
   };
 }
 
-export function getIndentConfig(defaultSize = 4, defaultUseSpace = true): indentConfig {
+export function loadIndentConfig(defaultSize = 4, defaultUseSpace = true): indentConfig {
   const activeTextTabSize = vscode.window.activeTextEditor?.options.tabSize ?? defaultSize;
   const useSpace = vscode.window.activeTextEditor?.options.insertSpaces ?? defaultUseSpace;
 
@@ -66,6 +66,18 @@ export function getIndentConfig(defaultSize = 4, defaultUseSpace = true): indent
     useSpace: typeof useSpace === "boolean" ? useSpace : useSpace === "true",
     tabSize: typeof activeTextTabSize === "number" ? activeTextTabSize : parseInt(activeTextTabSize),
   };
+}
+
+export function getIndentOfLine(line: string, indentChar: " " | "\t"): number {
+  let numIndent = 0;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === indentChar) {
+      numIndent += 1;
+    } else {
+      break;
+    }
+  }
+  return numIndent;
 }
 
 export function replaceUrl(text: string, from: string, to: string) {

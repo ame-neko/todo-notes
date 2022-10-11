@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify } from "yaml";
-import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl, extensionConfig } from "./utils";
+import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl, extensionConfig, loadIndentConfig, getIndentOfLine } from "./utils";
 import * as fs from "fs";
 
 interface yamlMetadata {
@@ -16,6 +16,8 @@ interface yamlMetadata {
 }
 
 class FileAlreadyExistError extends Error {}
+
+const TODO_REGEX = /.*?- \[ \]\s*/;
 
 async function writeToFile(
   folderUri: vscode.Uri,
@@ -145,7 +147,7 @@ function detectCompletedTodoRange(
   return new vscode.Range(new vscode.Position(startLineFrom1 - 1, 0), new vscode.Position(endLineFrom1 - 1, endLineLength));
 }
 
-function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { metadata: yamlMetadata; lines: number[] } {
+function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { metadata: yamlMetadata; metadataLines: number[] } {
   let metadata: yamlMetadata = {};
   let todoLineLevel = -1;
   const lines: number[] = [];
@@ -170,7 +172,7 @@ function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { meta
   });
   return {
     metadata: metadata,
-    lines: lines,
+    metadataLines: lines,
   };
 }
 
@@ -186,14 +188,27 @@ function isChildTodoCompleted(elementsList: any[], todoContentsRange: vscode.Ran
   return true;
 }
 
-function getTodoConetntsWithoutMetadataLine(document: vscode.TextDocument, todoContentsRange: vscode.Range, lines: number[], EOL: string): string {
-  let text = "";
+function removeMetadataLineFromTodoContents(document: vscode.TextDocument, todoContentsRange: vscode.Range, metadataLines: number[]): string[] {
+  const lines: string[] = [];
   for (let li = todoContentsRange.start.line; li <= todoContentsRange.end.line; li++) {
-    if (!lines.includes(li)) {
-      text += document.lineAt(li).text + EOL;
+    if (!metadataLines.includes(li)) {
+      lines.push(document.lineAt(li).text);
     }
   }
-  return text;
+  return lines;
+}
+
+function removeIndentFromTodoContents(lines: string[], todoLine: string): string[] {
+  const indentConfig = loadIndentConfig();
+  const indentChar = indentConfig.useSpace ? " " : "\t";
+  const numIndent = (getIndentOfLine(todoLine, indentChar) + 1) * indentConfig.tabSize;
+  if (numIndent > 0) {
+    const pattern = new RegExp(`^[${indentChar}]{0,${numIndent}}`);
+    lines = lines.map((line) => {
+      return line.replace(pattern, "");
+    });
+  }
+  return lines;
 }
 
 export async function completeTodo(copyToNotes: boolean, removeContents: boolean) {
@@ -226,17 +241,18 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           }
         }
         if (copyToNotes) {
-          const { metadata, lines } = parseYamlMetadata(parsed, todoRange);
+          const { metadata, metadataLines } = parseYamlMetadata(parsed, todoRange);
           const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
 
-          const title = metadata.Title ?? todoLine.text.replace(/.*?- \[ \]\s*/, "").trim();
+          const title = metadata.Title ?? todoLine.text.replace(TODO_REGEX, "").trim();
           const fileName = sanitize(metadata.FileName ?? title + ".md");
           const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri;
           const toDir = workspaceFolderUri.with({ path: posix.join(workspaceFolderUri.path, folderPath) });
           const currentFilePath = vscode.window.activeTextEditor?.document.fileName;
           const fromDir = currentFilePath ? path.dirname(currentFilePath) : workspaceFolderUri.path;
-          const body = getTodoConetntsWithoutMetadataLine(editor.document, todoContentsRange, lines, config.EOL);
-          const bodyUrlReplaced = replaceUrl(body, fromDir, toDir.path);
+          let lines = removeMetadataLineFromTodoContents(editor.document, todoContentsRange, metadataLines);
+          lines = removeIndentFromTodoContents(lines, todoLine.text);
+          const bodyUrlReplaced = replaceUrl(lines.join(config.EOL), fromDir, toDir.path);
 
           if (config.addCompletionDate) {
             metadata["CompletedDate"] = getDateStr(config);
