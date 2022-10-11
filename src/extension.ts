@@ -23,10 +23,10 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(completeAndDiscardTodoDisposable);
 
-  const justCompleteTodoDisposable = vscode.commands.registerCommand("todo-notes.justCompleteTodo", () => {
+  const completeTodoDisposable = vscode.commands.registerCommand("todo-notes.completeTodo", () => {
     completeTodo(false, false);
   });
-  context.subscriptions.push(justCompleteTodoDisposable);
+  context.subscriptions.push(completeTodoDisposable);
 
   const rootPath =
     vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;

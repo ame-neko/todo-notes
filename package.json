@@ -34,16 +34,16 @@
         "title": "Add Todo"
       },
       {
+        "command": "todo-notes.completeTodo",
+        "title": "Complete Todo"
+      },
+      {
         "command": "todo-notes.completeAndCopyTodo",
         "title": "Complete Todo and Copy to Notes"
       },
       {
         "command": "todo-notes.completeAndDiscardTodo",
         "title": "Complete Todo and Discard contents"
-      },
-      {
-        "command": "todo-notes.justCompleteTodo",
-        "title": "Just Complete Todo"
       },
       {
         "command": "todoNotesTags.refreshEntry",
@@ -75,7 +75,7 @@
         },
         {
           "when": "resourceLangId == markdown",
-          "command": "todo-notes.justCompleteTodo",
+          "command": "todo-notes.completeTodo",
           "group": "1_modification"
         }
       ],
@@ -115,7 +115,7 @@
         "when": "resourceLangId == markdown && editorTextFocus"
       },
       {
-        "command": "todo-notes.justCompleteTodo",
+        "command": "todo-notes.completeTodo",
         "key": "ctrl+alt+j",
         "mac": "cmd+alt+j",
         "when": "resourceLangId == markdown && editorTextFocus"
