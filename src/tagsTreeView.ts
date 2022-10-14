@@ -168,7 +168,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
     if (yamlHeader?.attributes == null || Object.keys(yamlHeader.attributes).length == 0) {
       return;
     }
-    let newTags = [];
+    let newTags;
     if (yamlHeader?.attributes?.Tags != null) {
       if (Array.isArray(yamlHeader?.attributes?.Tags)) {
         newTags = yamlHeader.attributes.Tags.map((tag: string) => {
@@ -177,6 +177,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
           }
           return tag;
         });
+        newTags = Array.from(new Set(newTags));
       } else if (typeof yamlHeader?.attributes?.Tags === "string") {
         newTags = yamlHeader?.attributes?.Tags === oldTag ? newTag : yamlHeader?.attributes?.Tags;
       }
