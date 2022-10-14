@@ -34,9 +34,12 @@ export function activate(context: vscode.ExtensionContext) {
     const provider = new NotesTagsProvider(rootPath);
     const treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
       treeDataProvider: provider,
+      showCollapseAll: true,
     });
     const refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () => provider.refresh());
     context.subscriptions.push(refreshDisposable);
+    const renameDisposable = vscode.commands.registerCommand("todoNotesTags.renameTag", (element: Element) => provider.renameTag(element.name));
+    context.subscriptions.push(renameDisposable);
 
     const createVirtualDocumentDisposable = vscode.commands.registerCommand("todoNotesTags.createVirtualDocument", async (element: Element) => {
       const uri = vscode.Uri.parse("tags:" + element.name);

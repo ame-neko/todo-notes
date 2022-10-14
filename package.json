@@ -51,6 +51,10 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "todoNotesTags.renameTag",
+        "title": "Rename this Tag"
+      },
+      {
         "command": "todoNotesTags.createVirtualDocument",
         "title": "See all documents in this tag",
         "icon": "$(eye)"
@@ -92,6 +96,10 @@
           "when": "view == todoNotesTags && viewItem == tag",
           "group": "inline",
           "args": "test"
+        },
+        {
+          "command": "todoNotesTags.renameTag",
+          "when": "view == todoNotesTags && viewItem == tag"
         }
       ]
     },
