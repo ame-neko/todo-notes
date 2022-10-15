@@ -20,9 +20,9 @@ export function addTodo() {
   const insertStr = `- [ ] 
 
 ${currentCursorIndent}${indent}[metadata]: # (Tags: [])
+${currentCursorIndent}${indent}[metadata]: # (FolderPath: )
 ${currentCursorIndent}${indent}[metadata]: # (Title: )
 ${currentCursorIndent}${indent}[metadata]: # (FileName: )
-${currentCursorIndent}${indent}[metadata]: # (FolderPath: )
 ${currentCursorIndent}${indent}[metadata]: # (AppendMode: )
 ${currentCursorIndent}${indent}[metadata]: # (CreatedDate: "${getDateStr(config)}")
 ${indent}`;
@@ -32,4 +32,16 @@ ${indent}`;
   });
 
   editor.selection = new vscode.Selection(newPosition, newPosition);
+}
+
+export function addTodoWithoutMetadata() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
+  const insertStr = `- [ ] `;
+
+  editor.edit((e) => {
+    e.insert(editor.selection.active, insertStr);
+  });
 }
