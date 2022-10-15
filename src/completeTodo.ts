@@ -166,7 +166,7 @@ function parseParentMetadata(element: any): yamlMetadata {
   return metadata;
 }
 
-function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { metadata: yamlMetadata; metadataLines: number[] } {
+function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range, config: extensionConfig): { metadata: yamlMetadata; metadataLines: number[] } {
   let metadata: yamlMetadata = {};
   let todoLineLevel = -1;
   const lines: number[] = [];
@@ -176,7 +176,7 @@ function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { meta
     }
     if (isTodo(e) && e?.position?.start?.line === todoRange.start.line + 1) {
       todoLineLevel = e?.level;
-      if (e?.parent != null) {
+      if (config.inheritParentTodoMetadata && e?.parent != null) {
         const parentMetadata = parseParentMetadata(e.parent);
         Object.keys(parentMetadata)
           .filter((key) => SPECIAL_METADATA_NAMES.includes(key))
@@ -266,7 +266,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           }
         }
         if (copyToNotes) {
-          const { metadata, metadataLines } = parseYamlMetadata(parsed, todoRange);
+          const { metadata, metadataLines } = parseYamlMetadata(parsed, todoRange, config);
           const folderPath: string = metadata.FolderPath ?? config.saveNotesPath;
 
           const title = metadata.Title ?? todoLine.text.replace(TODO_REGEX, "").trim();

@@ -18,6 +18,7 @@ export interface extensionConfig {
   showDialogueWhenFileExist: boolean;
   appendMode: "append" | "overwrite" | "increment";
   colorizeTagIcon: boolean;
+  inheritParentTodoMetadata: boolean;
 }
 
 interface indentConfig {
@@ -37,6 +38,7 @@ export function loadConfiguration(): extensionConfig {
   const addCompletionDate: boolean = configurations.get("addCompletionDate") ?? true;
   const showDialogueWhenFileExist: boolean = configurations.get("showDialogueWhenFileExist") ?? true;
   const colorizeTagIcon: boolean = configurations.get("colorizeTagIcon") ?? true;
+  const inheritParentTodoMetadata: boolean = configurations.get("inheritParentTodoMetadata") ?? true;
   let EOL = null;
   switch (configurations.get("eol")) {
     case "LF":
@@ -57,6 +59,7 @@ export function loadConfiguration(): extensionConfig {
     showDialogueWhenFileExist: showDialogueWhenFileExist,
     appendMode: appendMode,
     colorizeTagIcon: colorizeTagIcon,
+    inheritParentTodoMetadata: inheritParentTodoMetadata,
   };
 }
 
