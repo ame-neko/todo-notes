@@ -113,6 +113,8 @@ function flattenParsedMarkDown(elementsList: any[], parsed: any, level: number) 
   elementsList.push(parsed);
   if (parsed?.children) {
     [...parsed.children].forEach((e) => {
+      // Create a link to the parent
+      e.parent = parsed;
       flattenParsedMarkDown(elementsList, e, level + 1);
     });
   }

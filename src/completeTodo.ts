@@ -146,6 +146,22 @@ function detectCompletedTodoRange(
   const endLineLength = editor.document.lineAt(endLineFrom1 - 1).text.length;
   return new vscode.Range(new vscode.Position(startLineFrom1 - 1, 0), new vscode.Position(endLineFrom1 - 1, endLineLength));
 }
+function parseParentMetadata(element: any): yamlMetadata {
+  let metadata = {};
+  if (element?.children != null) {
+    element.children.forEach((e: any) => {
+      if (e?.type === "definition" && e?.identifier === "metadata" && e?.title) {
+        const meta = parse(e.title);
+        metadata = { ...meta, ...metadata };
+      }
+    });
+  }
+  if (element?.parent != null) {
+    const parentMeta = parseParentMetadata(element.parent);
+    metadata = { ...parentMeta, ...metadata };
+  }
+  return metadata;
+}
 
 function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { metadata: yamlMetadata; metadataLines: number[] } {
   let metadata: yamlMetadata = {};
@@ -157,6 +173,9 @@ function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { meta
     }
     if (isTodo(e) && e?.position?.start?.line === todoRange.start.line + 1) {
       todoLineLevel = e?.level;
+      if (e?.parent != null) {
+        metadata = parseParentMetadata(e.parent);
+      }
       return;
     }
 
