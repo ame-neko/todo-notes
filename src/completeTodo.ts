@@ -1,3 +1,4 @@
+import { SPECIAL_METADATA_NAMES } from "./utils";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { posix } from "path";
 import * as vscode from "vscode";
@@ -7,13 +8,15 @@ import { parse, stringify, YAMLError } from "yaml";
 import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl, extensionConfig, loadIndentConfig, getIndentOfLine } from "./utils";
 import * as fs from "fs";
 
-interface yamlMetadata {
+type yamlMetadata = {
   FolderPath?: string;
   Title?: string;
   FileName?: string;
   CompletedDate?: string;
   AppendMode?: string;
-}
+} & {
+  [key: string]: string;
+};
 
 class FileAlreadyExistError extends Error {}
 
@@ -174,7 +177,10 @@ function parseYamlMetadata(elementsList: any[], todoRange: vscode.Range): { meta
     if (isTodo(e) && e?.position?.start?.line === todoRange.start.line + 1) {
       todoLineLevel = e?.level;
       if (e?.parent != null) {
-        metadata = parseParentMetadata(e.parent);
+        const parentMetadata = parseParentMetadata(e.parent);
+        Object.keys(parentMetadata)
+          .filter((key) => SPECIAL_METADATA_NAMES.includes(key))
+          .forEach((key) => (metadata[key] = parentMetadata[key]));
       }
       return;
     }

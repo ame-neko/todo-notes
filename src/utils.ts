@@ -25,6 +25,8 @@ interface indentConfig {
   tabSize: number;
 }
 
+export const SPECIAL_METADATA_NAMES = ["Tags", "FolderPath", "Title", "FileName", "AppendMode", "CreatedDate"];
+
 export function loadConfiguration(): extensionConfig {
   const configurations = vscode.workspace.getConfiguration("todoNotes");
   const todoRangeDetectionMode: "strict" | "next-todo" = configurations.get("todoRangeDetectionMode") === "strict" ? "strict" : "next-todo";
