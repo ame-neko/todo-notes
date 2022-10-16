@@ -20,3 +20,8 @@ export interface RefreshTagsTreeParams {
   tagsToElement: any;
 }
 export const REFRESH_TAGS_TREE_METHOD = "refreshTagsTree";
+
+export interface FileSavedParams {
+  filePath: string;
+}
+export const FILE_SAVED_NOTIFICATION_METHOD = "fileSavedNotifiation";

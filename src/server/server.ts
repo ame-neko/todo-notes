@@ -1,4 +1,11 @@
-import { RENAME_TAG_METHOD, RenameTagParms, REFRESH_TAGS_TREE_METHOD, RefreshTagsTreeParams } from "./../constants";
+import {
+  RENAME_TAG_METHOD,
+  RenameTagParms,
+  REFRESH_TAGS_TREE_METHOD,
+  RefreshTagsTreeParams,
+  FileSavedParams,
+  FILE_SAVED_NOTIFICATION_METHOD,
+} from "./../constants";
 import { TagHandler } from "./tagParser";
 /* --------------------------------------------------------------------------------------------
  * Copyright (c) Microsoft Corporation. All rights reserved.
@@ -82,8 +89,18 @@ connection.onRequest(RENAME_TAG_METHOD, (params: RenameTagParms) => {
 
 documents.onDidSave((change) => {
   const tagsToElement = tagHandler.handleSavedFile(change.document.uri, change.document.languageId, change.document.version);
-  const params: RefreshTagsTreeParams = { tagsToElement: tagsToElement };
-  connection.sendNotification(REFRESH_TAGS_TREE_METHOD, params);
+  if (tagsToElement) {
+    const params: RefreshTagsTreeParams = { tagsToElement: tagsToElement };
+    connection.sendNotification(REFRESH_TAGS_TREE_METHOD, params);
+  }
+});
+
+connection.onNotification(FILE_SAVED_NOTIFICATION_METHOD, (params: FileSavedParams) => {
+  const tagsToElement = tagHandler.handleSavedFile(params.filePath);
+  if (tagsToElement) {
+    const params: RefreshTagsTreeParams = { tagsToElement: tagsToElement };
+    connection.sendNotification(REFRESH_TAGS_TREE_METHOD, params);
+  }
 });
 
 connection.onInitialized(() => {

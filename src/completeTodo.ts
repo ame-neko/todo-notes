@@ -70,6 +70,7 @@ async function writeToFile(
     await vscode.workspace.fs.writeFile(fileUri, writeData);
     vscode.window.showInformationMessage(`Todo content has been copied to "${folderPath + "/" + fileName}".`);
   }
+  return fileUri;
 }
 
 function isTodo(element: any): boolean {
@@ -256,6 +257,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
 
     const todoRange = detectCompletedTodoRange(parsed, currentLineNumberFrom1, editor, config.todoRangeDetectionMode);
 
+    let fileUri;
     if (todoRange != null) {
       const todoLine = editor.document.lineAt(todoRange.start.line);
       let todoContentsRange: vscode.Range | null = null;
@@ -286,7 +288,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           }
           const header = Object.keys(metadata).length > 0 ? "---" + config.EOL + stringify(metadata) + "---" : null;
           //TODO: ask user when the destination note already exist
-          await writeToFile(toDir, folderPath, fileName, header, "# " + title, bodyUrlReplaced, config.EOL, config, metadata.AppendMode);
+          fileUri = await writeToFile(toDir, folderPath, fileName, header, "# " + title, bodyUrlReplaced, config.EOL, config, metadata.AppendMode);
         }
       }
 
@@ -305,6 +307,7 @@ export async function completeTodo(copyToNotes: boolean, removeContents: boolean
           }
         }
       });
+      return fileUri;
     }
   } catch (e) {
     if (e instanceof FileAlreadyExistError) {

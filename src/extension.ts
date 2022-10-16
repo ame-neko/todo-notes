@@ -1,3 +1,4 @@
+import { FILE_SAVED_NOTIFICATION_METHOD, FileSavedParams } from "./constants";
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import path = require("path");
@@ -44,8 +45,12 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(addSimpleTodoDisposable);
 
-  const completeAndCopyTodoDisposable = vscode.commands.registerCommand("todo-notes.completeAndCopyTodo", () => {
-    completeTodo(true, true);
+  const completeAndCopyTodoDisposable = vscode.commands.registerCommand("todo-notes.completeAndCopyTodo", async () => {
+    const fileUri = await completeTodo(true, true);
+    if (fileUri != null) {
+      const params: FileSavedParams = { filePath: fileUri.fsPath };
+      client.sendNotification(FILE_SAVED_NOTIFICATION_METHOD, params);
+    }
   });
   context.subscriptions.push(completeAndCopyTodoDisposable);
 

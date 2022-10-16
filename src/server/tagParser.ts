@@ -156,19 +156,21 @@ export class TagHandler {
     await fs.promises.writeFile(filePath, writeData);
   }
 
-  async handleSavedFile(fileUri: string, languageId: string, version: number) {
-    if (languageId !== "markdown") {
+  async handleSavedFile(fileUri: string, languageId?: string, version?: number) {
+    if (languageId != null && languageId !== "markdown") {
       return;
     }
     if (!fileUri.startsWith("file://")) {
       return;
     }
     const filePath = fileUri.substring("file://".length);
-    if (this.filePathToFileInfo[filePath] == null || this.filePathToFileInfo[filePath].version !== version) {
+    if (this.filePathToFileInfo[filePath] == null || version == null || this.filePathToFileInfo[filePath].version !== version) {
       const tags = await this.extractTagFromNote(filePath);
       let newFileInfo: FileInfo;
       if (this.filePathToFileInfo[filePath] != null) {
-        this.filePathToFileInfo[filePath].version = version;
+        if (version != null) {
+          this.filePathToFileInfo[filePath].version = version;
+        }
         const oldTags = this.filePathToFileInfo[filePath].tags;
         if (compareSortedArray(tags.sort(), oldTags.sort())) {
           // tags not changed
@@ -178,7 +180,7 @@ export class TagHandler {
       } else {
         // new file
         const fileName = path.basename(filePath);
-        newFileInfo = { name: fileName, filePath: filePath, version: version, tags: tags };
+        newFileInfo = { name: fileName, filePath: filePath, version: version ?? -1, tags: tags };
         this.filePathToFileInfo[filePath] = newFileInfo;
       }
     }
