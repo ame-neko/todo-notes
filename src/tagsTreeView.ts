@@ -44,7 +44,7 @@ export class Element extends vscode.TreeItem {
   }
 }
 
-export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vscode.CompletionItemProvider {
+export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   tagToElements: { [key: string]: Element[] };
   client: LanguageClient;
   constructor(private workspaceRoot: string, client: LanguageClient) {
@@ -57,20 +57,6 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
         this._onDidChangeTreeData.fire();
       });
     });
-  }
-
-  provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken,
-    context: vscode.CompletionContext
-  ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
-    const line = document.lineAt(position).text.trimStart();
-    if (!line.startsWith("[metadata]: #") && !line.includes("Tags:")) {
-      return;
-    }
-    const tags = Object.keys(this.tagToElements);
-    return tags.map((tag) => new vscode.CompletionItem(tag, vscode.CompletionItemKind.Keyword));
   }
 
   private _onDidChangeTreeData: vscode.EventEmitter<Element | undefined | null | void> = new vscode.EventEmitter<Element | undefined | null | void>();

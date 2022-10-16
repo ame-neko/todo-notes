@@ -3,6 +3,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { compareSortedArray, replaceUrl } from "../utils";
 import { stringify } from "yaml";
+import { CompletionItem, CompletionItemKind } from "vscode-languageserver";
 const frontMatter = require("front-matter");
 
 interface TagToFile {
@@ -187,5 +188,16 @@ export class TagHandler {
 
     this.tagToElements = this.generateTagsToElements(Object.values(this.filePathToFileInfo));
     return this.tagToElements;
+  }
+
+  provideCompletionItems(line: string): CompletionItem[] {
+    if (!line.startsWith("[metadata]: #") && !line.includes("Tags:")) {
+      return [];
+    }
+    const tags = Object.keys(this.tagToElements);
+    const items = tags.map((tag) => {
+      return { label: tag, kind: CompletionItemKind.Keyword };
+    });
+    return items;
   }
 }

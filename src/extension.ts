@@ -69,9 +69,6 @@ export function activate(context: vscode.ExtensionContext) {
   if (rootPath) {
     const provider = new NotesTagsProvider(rootPath, client);
 
-    const completinProviderDisposable = vscode.languages.registerCompletionItemProvider("markdown", provider, " ");
-    context.subscriptions.push(completinProviderDisposable);
-
     const treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
       treeDataProvider: provider,
       showCollapseAll: true,

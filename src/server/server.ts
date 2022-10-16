@@ -24,6 +24,7 @@ import {
   TextDocumentPositionParams,
   TextDocumentSyncKind,
   InitializeResult,
+  Range,
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -135,23 +136,15 @@ connection.onDidChangeConfiguration((change) => {
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion((_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-  // The pass parameter contains the position of the text document in
-  // which code complete got requested. For the example we ignore this
-  // info and always provide the same completion items.
-  console.log("on completion");
+  const document = documents.get(_textDocumentPosition.textDocument.uri);
+  if (document == null) {
+    return [];
+  }
 
-  return [
-    {
-      label: "TypeScript2",
-      kind: CompletionItemKind.Text,
-      data: 1,
-    },
-    {
-      label: "JavaScript",
-      kind: CompletionItemKind.Text,
-      data: 2,
-    },
-  ];
+  const range = Range.create(_textDocumentPosition.position.line, 0, _textDocumentPosition.position.line, _textDocumentPosition.position.character);
+  const line = document.getText(range);
+
+  return tagHandler.provideCompletionItems(line);
 });
 
 // Make the text document manager listen on the connection
