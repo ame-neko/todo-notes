@@ -73,7 +73,9 @@ export function activate(context: vscode.ExtensionContext) {
     });
     const refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () => provider.refresh());
     context.subscriptions.push(refreshDisposable);
-    const renameDisposable = vscode.commands.registerCommand("todoNotesTags.renameTag", (element: Element) => provider.renameTag(element.name));
+    const renameDisposable = vscode.commands.registerCommand("todoNotesTags.renameTag", (element: Element) =>
+      provider.callLanguageServerToRenameTag(element.name)
+    );
     context.subscriptions.push(renameDisposable);
 
     const createVirtualDocumentDisposable = vscode.commands.registerCommand("todoNotesTags.createVirtualDocument", async (element: Element) => {

@@ -1,3 +1,4 @@
+import { RENAME_TAG_METHOD, RenameTagParms } from "./../constants";
 import { TagHandler } from "./tagParser";
 /* --------------------------------------------------------------------------------------------
  * Copyright (c) Microsoft Corporation. All rights reserved.
@@ -72,6 +73,10 @@ connection.onRequest(GET_ALL_TAGS_METHOD, (params: GetAllTagsParams) => {
 
 connection.onRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, (params: CreateVirtualDocumentParams) => {
   return tagHandler.createVirtualDocument(params.tag, params.destinationPath, params.EOL);
+});
+
+connection.onRequest(RENAME_TAG_METHOD, (params: RenameTagParms) => {
+  return tagHandler.renameTag(params.filePath, params.oldTag, params.newTag, params.EOL);
 });
 
 connection.onInitialized(() => {

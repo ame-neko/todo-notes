@@ -2,6 +2,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import { replaceUrl } from "../utils";
+import { stringify } from "yaml";
 const frontMatter = require("front-matter");
 
 interface TagToFile {
@@ -103,5 +104,32 @@ export class TagHandler {
       })
     );
     return texts.filter((v) => typeof v === "string").join(EOL + EOL + "* * * * * * * * * * * * * * *" + EOL + EOL);
+  }
+
+  async renameTag(filePath: string, oldTag: string, newTag: string, EOL: string) {
+    const text = await (await fs.promises.readFile(filePath)).toString();
+    const yamlHeader = frontMatter(text);
+    if (yamlHeader?.attributes == null || Object.keys(yamlHeader.attributes).length == 0) {
+      return;
+    }
+    let newTags;
+    if (yamlHeader?.attributes?.Tags != null) {
+      if (Array.isArray(yamlHeader?.attributes?.Tags)) {
+        newTags = yamlHeader.attributes.Tags.map((tag: string) => {
+          if (tag === oldTag) {
+            return newTag;
+          }
+          return tag;
+        });
+        newTags = Array.from(new Set(newTags));
+      } else if (typeof yamlHeader?.attributes?.Tags === "string") {
+        newTags = yamlHeader?.attributes?.Tags === oldTag ? newTag : yamlHeader?.attributes?.Tags;
+      }
+      yamlHeader.attributes.Tags = newTags;
+    }
+    const newHeader = "---" + EOL + stringify(yamlHeader.attributes) + "---";
+    const newText = newHeader + EOL + yamlHeader.body ?? "";
+    const writeData = Buffer.from(newText, "utf-8");
+    await fs.promises.writeFile(filePath, writeData);
   }
 }

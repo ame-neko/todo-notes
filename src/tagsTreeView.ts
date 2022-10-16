@@ -1,12 +1,9 @@
 import { LanguageClient } from "vscode-languageclient/node";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
-import { replaceUrl, stringHashCode } from "./utils";
-import { extensionConfig, loadConfiguration } from "./vscodeUtils";
-import { stringify } from "yaml";
-import { CreateVirtualDocumentParams, CREATE_VIRTUAL_DOCUMENT_METHOD, GET_ALL_TAGS_METHOD } from "./constants";
+import { stringHashCode } from "./utils";
+import { loadConfiguration } from "./vscodeUtils";
+import { CreateVirtualDocumentParams, CREATE_VIRTUAL_DOCUMENT_METHOD, GET_ALL_TAGS_METHOD, RenameTagParms, RENAME_TAG_METHOD } from "./constants";
 
 const COLOR_IDS = ["charts.red", "charts.blue", "charts.yellow", "charts.orange", "charts.green", "charts.purple"];
 
@@ -111,35 +108,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
     return await this.client.onReady().then(() => this.client.sendRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, parms));
   }
 
-  // async doRanmeTag(filePath: string, oldTag: string, newTag: string, config: extensionConfig) {
-  //   const fileUri = vscode.Uri.parse(filePath);
-  //   const text = await (await vscode.workspace.fs.readFile(fileUri)).toString();
-  //   const yamlHeader = frontMatter(text);
-  //   if (yamlHeader?.attributes == null || Object.keys(yamlHeader.attributes).length == 0) {
-  //     return;
-  //   }
-  //   let newTags;
-  //   if (yamlHeader?.attributes?.Tags != null) {
-  //     if (Array.isArray(yamlHeader?.attributes?.Tags)) {
-  //       newTags = yamlHeader.attributes.Tags.map((tag: string) => {
-  //         if (tag === oldTag) {
-  //           return newTag;
-  //         }
-  //         return tag;
-  //       });
-  //       newTags = Array.from(new Set(newTags));
-  //     } else if (typeof yamlHeader?.attributes?.Tags === "string") {
-  //       newTags = yamlHeader?.attributes?.Tags === oldTag ? newTag : yamlHeader?.attributes?.Tags;
-  //     }
-  //     yamlHeader.attributes.Tags = newTags;
-  //   }
-  //   const newHeader = "---" + config.EOL + stringify(yamlHeader.attributes) + "---";
-  //   const newText = newHeader + config.EOL + yamlHeader.body ?? "";
-  //   const writeData = Buffer.from(newText, "utf-8");
-  //   await vscode.workspace.fs.writeFile(fileUri, writeData);
-  // }
-
-  async renameTag(oldTag: string) {
+  async callLanguageServerToRenameTag(oldTag: string) {
     const newTag = await vscode.window.showInputBox({ placeHolder: oldTag, title: "Rename Tag", prompt: "Please input new name of tag." });
     if (newTag == null) {
       return;
@@ -154,7 +123,8 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
         if (element.filePath == null) {
           return;
         }
-        // return this.doRanmeTag(element.filePath, oldTag, newTag, config);
+        const parms: RenameTagParms = { filePath: element.filePath, oldTag: oldTag, newTag: newTag, EOL: config.EOL };
+        return this.client.onReady().then(() => this.client.sendRequest(RENAME_TAG_METHOD, parms));
       })
     );
     this.refresh();
