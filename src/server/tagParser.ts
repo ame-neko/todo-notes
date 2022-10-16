@@ -56,7 +56,7 @@ export class TagHandler {
       saveNotesPath: "",
     };
     const elements = await this.walk(config.saveNotesPath ? path.join(workspaceRoot, config.saveNotesPath) : workspaceRoot);
-    const tagToElements: TagToFile = {};
+    const te: TagToFile = {};
     await Promise.all(
       elements.map(async (element) => {
         if (!element.filePath) {
@@ -64,30 +64,35 @@ export class TagHandler {
         }
         const tags = await this.extractTagFromNote(element.filePath);
         tags.forEach((tag) => {
-          if (tag in tagToElements) {
-            tagToElements[tag].push(element);
+          if (tag in te) {
+            te[tag].push(element);
           } else {
-            tagToElements[tag] = [element];
+            te[tag] = [element];
           }
         });
       })
     );
     // sort files
-    Object.keys(tagToElements).forEach((key) => {
-      tagToElements[key].sort((a, b) => a.name.localeCompare(b.name));
+    Object.keys(te).forEach((key) => {
+      te[key].sort((a, b) => a.name.localeCompare(b.name));
     });
 
+    this.tagToElements = te;
+
     return Promise.resolve(
-      Object.keys(tagToElements)
+      Object.keys(te)
         // sort tags
         .sort()
         .map((key) => {
-          return { tag: key, files: tagToElements[key] };
+          return { tag: key, files: te[key] };
         })
     );
   }
 
   async createVirtualDocument(tag: string, destinationPath: string | null, EOL: string): Promise<string> {
+    if (this.tagToElements == null || this.tagToElements[tag] == null) {
+      return "";
+    }
     const texts = await Promise.all(
       this.tagToElements[tag]?.map((element) => {
         if (element.filePath) {

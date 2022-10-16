@@ -85,11 +85,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(createVirtualDocumentDisposable);
 
     const tagAllDocumentProvider = new (class implements vscode.TextDocumentContentProvider {
-      async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        return await provider.callLanguageServerForVirtualDocument(
-          uri,
-          vscode?.workspace?.workspaceFolders ? vscode?.workspace?.workspaceFolders[0].uri.path : null
-        );
+      provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+        return provider.callLanguageServerForVirtualDocument(uri, vscode?.workspace?.workspaceFolders ? vscode?.workspace?.workspaceFolders[0].uri.path : null);
       }
     })();
     const tagAllDocumentProviderDisposable = vscode.workspace.registerTextDocumentContentProvider("tags", tagAllDocumentProvider);

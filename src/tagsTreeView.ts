@@ -6,7 +6,7 @@ import * as path from "path";
 import { replaceUrl, stringHashCode } from "./utils";
 import { extensionConfig, loadConfiguration } from "./vscodeUtils";
 import { stringify } from "yaml";
-import { CREATE_VIRTUAL_DOCUMENT_METHOD, GET_ALL_TAGS_METHOD } from "./constants";
+import { CreateVirtualDocumentParams, CREATE_VIRTUAL_DOCUMENT_METHOD, GET_ALL_TAGS_METHOD } from "./constants";
 
 const COLOR_IDS = ["charts.red", "charts.blue", "charts.yellow", "charts.orange", "charts.green", "charts.purple"];
 
@@ -107,10 +107,8 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
       return "";
     }
     const config = loadConfiguration();
-
-    return this.client
-      .onReady()
-      .then(() => this.client.sendRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, { EOL: config.EOL, tag: tag, destinationPath: destinationPath }));
+    const parms: CreateVirtualDocumentParams = { EOL: config.EOL, tag: tag, destinationPath: destinationPath ?? "" };
+    return await this.client.onReady().then(() => this.client.sendRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, parms));
   }
 
   // async doRanmeTag(filePath: string, oldTag: string, newTag: string, config: extensionConfig) {
