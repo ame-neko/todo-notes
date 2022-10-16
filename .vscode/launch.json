@@ -18,6 +18,15 @@
 			"preLaunchTask": "${defaultBuildTask}"
 		},
 		{
+			"type": "node",
+			"request": "attach",
+			"name": "Attach to Server",
+			"address": "localhost",
+			"port": 6009,
+			"sourceMaps": true,
+			"outFiles": ["${workspaceFolder}/out/server/**/*.js"]
+		},
+		{
 			"name": "Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",
@@ -29,6 +38,12 @@
 				"${workspaceFolder}/out/test/**/*.js"
 			],
 			"preLaunchTask": "${defaultBuildTask}"
+		}
+	],
+	"compounds": [
+		{
+			"name": "Client + Server",
+			"configurations": ["Run Extension", "Attach to Server"]
 		}
 	]
 }

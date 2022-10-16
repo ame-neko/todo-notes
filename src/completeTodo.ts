@@ -5,7 +5,9 @@ import * as vscode from "vscode";
 import sanitize = require("sanitize-filename");
 import * as path from "path";
 import { parse, stringify, YAMLError } from "yaml";
-import { getDateStr, loadConfiguration, parseMarkdown, replaceUrl, extensionConfig, loadIndentConfig, getIndentOfLine } from "./utils";
+import { parseMarkdown, replaceUrl, getIndentOfLine } from "./utils";
+import { getDateStr, extensionConfig, loadConfiguration, loadIndentConfig } from "./vscodeUtils";
+
 import * as fs from "fs";
 
 type yamlMetadata = {
