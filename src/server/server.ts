@@ -1,4 +1,4 @@
-import { RENAME_TAG_METHOD, RenameTagParms } from "./../constants";
+import { RENAME_TAG_METHOD, RenameTagParms, REFRESH_TAGS_TREE_METHOD, RefreshTagsTreeParams } from "./../constants";
 import { TagHandler } from "./tagParser";
 /* --------------------------------------------------------------------------------------------
  * Copyright (c) Microsoft Corporation. All rights reserved.
@@ -28,6 +28,7 @@ const connection = createConnection(ProposedFeatures.all);
 // console.log = connection.console.log.bind(connection.console);
 // console.error = connection.console.error.bind(connection.console);
 // Create a simple text document manager.
+const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -77,6 +78,12 @@ connection.onRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, (params: CreateVirtualDocum
 
 connection.onRequest(RENAME_TAG_METHOD, (params: RenameTagParms) => {
   return tagHandler.renameTag(params.filePath, params.oldTag, params.newTag, params.EOL);
+});
+
+documents.onDidSave((change) => {
+  const tagsToElement = tagHandler.handleSavedFile(change.document.uri, change.document.languageId, change.document.version);
+  const params: RefreshTagsTreeParams = { tagsToElement: tagsToElement };
+  connection.sendNotification(REFRESH_TAGS_TREE_METHOD, params);
 });
 
 connection.onInitialized(() => {
@@ -129,6 +136,10 @@ connection.onCompletion((_textDocumentPosition: TextDocumentPositionParams): Com
     },
   ];
 });
+
+// Make the text document manager listen on the connection
+// for open, change and close text document events
+documents.listen(connection);
 
 // Listen on the connection
 connection.listen();

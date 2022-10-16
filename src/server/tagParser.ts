@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as path from "path";
 import * as fs from "fs";
-import { replaceUrl } from "../utils";
+import { compareSortedArray, replaceUrl } from "../utils";
 import { stringify } from "yaml";
 const frontMatter = require("front-matter");
 
@@ -12,10 +12,14 @@ interface TagToFile {
 interface FileInfo {
   name: string;
   filePath: string;
+  version: number;
+  tags: string[];
 }
 
 export class TagHandler {
   tagToElements: TagToFile = {};
+  notesDir = null;
+  filePathToFileInfo: { [filePath: string]: FileInfo } = {};
 
   async extractTagFromNote(fp: string): Promise<string[]> {
     const data = await fs.promises.readFile(fp, "utf-8");
@@ -37,7 +41,7 @@ export class TagHandler {
       .filter((dirent) => !dirent.isDirectory())
       .forEach((dirent) => {
         const fp = path.join(dirPath, dirent.name);
-        filePaths.push({ name: dirent.name, filePath: fp });
+        filePaths.push({ name: dirent.name, filePath: fp, version: -1, tags: [] });
       });
     await Promise.all(
       dirents
@@ -49,6 +53,25 @@ export class TagHandler {
         })
     );
     return filePaths;
+  }
+
+  generateTagsToElements(elements: FileInfo[]): TagToFile {
+    const te: TagToFile = {};
+    elements.forEach((e) => {
+      e.tags.forEach((tag) => {
+        if (tag in te) {
+          te[tag].push(e);
+        } else {
+          te[tag] = [e];
+        }
+      });
+    });
+
+    // sort files
+    Object.keys(te).forEach((key) => {
+      te[key].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return te;
   }
 
   async getAllTags(workspaceRoot: string) {
@@ -64,6 +87,7 @@ export class TagHandler {
           return;
         }
         const tags = await this.extractTagFromNote(element.filePath);
+        element.tags = tags;
         tags.forEach((tag) => {
           if (tag in te) {
             te[tag].push(element);
@@ -73,12 +97,11 @@ export class TagHandler {
         });
       })
     );
-    // sort files
-    Object.keys(te).forEach((key) => {
-      te[key].sort((a, b) => a.name.localeCompare(b.name));
-    });
 
-    this.tagToElements = te;
+    this.tagToElements = this.generateTagsToElements(elements);
+    Object.keys(te).forEach((key) => {
+      te[key].forEach((fileInfo) => (this.filePathToFileInfo[fileInfo.filePath] = fileInfo));
+    });
 
     return Promise.resolve(
       Object.keys(te)
@@ -131,5 +154,36 @@ export class TagHandler {
     const newText = newHeader + EOL + yamlHeader.body ?? "";
     const writeData = Buffer.from(newText, "utf-8");
     await fs.promises.writeFile(filePath, writeData);
+  }
+
+  async handleSavedFile(fileUri: string, languageId: string, version: number) {
+    if (languageId !== "markdown") {
+      return;
+    }
+    if (!fileUri.startsWith("file://")) {
+      return;
+    }
+    const filePath = fileUri.substring("file://".length);
+    if (this.filePathToFileInfo[filePath] == null || this.filePathToFileInfo[filePath].version !== version) {
+      const tags = await this.extractTagFromNote(filePath);
+      let newFileInfo: FileInfo;
+      if (this.filePathToFileInfo[filePath] != null) {
+        this.filePathToFileInfo[filePath].version = version;
+        const oldTags = this.filePathToFileInfo[filePath].tags;
+        if (compareSortedArray(tags.sort(), oldTags.sort())) {
+          // tags not changed
+          return;
+        }
+        this.filePathToFileInfo[filePath].tags = tags;
+      } else {
+        // new file
+        const fileName = path.basename(filePath);
+        newFileInfo = { name: fileName, filePath: filePath, version: version, tags: tags };
+        this.filePathToFileInfo[filePath] = newFileInfo;
+      }
+    }
+
+    this.tagToElements = this.generateTagsToElements(Object.values(this.filePathToFileInfo));
+    return this.tagToElements;
   }
 }

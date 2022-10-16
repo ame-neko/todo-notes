@@ -84,3 +84,18 @@ export function stringHashCode(str: string): number {
   }
   return hash;
 }
+
+export function compareSortedArray(a: any[], b: any[]): boolean {
+  if (a.length != b.length) {
+    return false;
+  }
+  if (a === b) {
+    return true;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
+}

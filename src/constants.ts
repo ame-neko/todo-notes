@@ -15,3 +15,8 @@ export interface RenameTagParms {
   EOL: string;
 }
 export const RENAME_TAG_METHOD = "renameTag";
+
+export interface RefreshTagsTreeParams {
+  tagsToElement: any;
+}
+export const REFRESH_TAGS_TREE_METHOD = "refreshTagsTree";

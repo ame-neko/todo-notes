@@ -3,7 +3,15 @@ import { LanguageClient } from "vscode-languageclient/node";
 import * as vscode from "vscode";
 import { stringHashCode } from "./utils";
 import { loadConfiguration } from "./vscodeUtils";
-import { CreateVirtualDocumentParams, CREATE_VIRTUAL_DOCUMENT_METHOD, GET_ALL_TAGS_METHOD, RenameTagParms, RENAME_TAG_METHOD } from "./constants";
+import {
+  CreateVirtualDocumentParams,
+  CREATE_VIRTUAL_DOCUMENT_METHOD,
+  GET_ALL_TAGS_METHOD,
+  RefreshTagsTreeParams,
+  REFRESH_TAGS_TREE_METHOD,
+  RenameTagParms,
+  RENAME_TAG_METHOD,
+} from "./constants";
 
 const COLOR_IDS = ["charts.red", "charts.blue", "charts.yellow", "charts.orange", "charts.green", "charts.purple"];
 
@@ -42,6 +50,13 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
   constructor(private workspaceRoot: string, client: LanguageClient) {
     this.tagToElements = {};
     this.client = client;
+
+    this.client.onReady().then(() => {
+      this.client.onNotification(REFRESH_TAGS_TREE_METHOD, (params: RefreshTagsTreeParams) => {
+        this.tagToElements = params.tagsToElement;
+        this._onDidChangeTreeData.fire();
+      });
+    });
   }
 
   provideCompletionItems(
