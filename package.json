@@ -149,6 +149,7 @@
       "properties": {
         "todoNotes.saveNotesPath": {
           "type": "string",
+          "default": "notes",
           "description": "Path to directory where notes will be saved."
         },
         "todoNotes.dateFormat": {
