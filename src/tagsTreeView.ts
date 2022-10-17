@@ -1,11 +1,17 @@
-import { extensionConfig } from "./utils";
+import { LanguageClient } from "vscode-languageclient/node";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
-import { loadConfiguration, replaceUrl, stringHashCode } from "./utils";
-import { stringify } from "yaml";
-const frontMatter = require("front-matter");
+import { stringHashCode } from "./utils";
+import { loadConfiguration } from "./vscodeUtils";
+import {
+  CreateVirtualDocumentParams,
+  CREATE_VIRTUAL_DOCUMENT_METHOD,
+  GET_ALL_TAGS_METHOD,
+  RefreshTagsTreeParams,
+  REFRESH_TAGS_TREE_METHOD,
+  RenameTagParms,
+  RENAME_TAG_METHOD,
+} from "./constants";
 
 const COLOR_IDS = ["charts.red", "charts.blue", "charts.yellow", "charts.orange", "charts.green", "charts.purple"];
 
@@ -38,24 +44,19 @@ export class Element extends vscode.TreeItem {
   }
 }
 
-export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vscode.CompletionItemProvider {
+export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   tagToElements: { [key: string]: Element[] };
-  constructor(private workspaceRoot: string) {
+  client: LanguageClient;
+  constructor(private workspaceRoot: string, client: LanguageClient) {
     this.tagToElements = {};
-  }
+    this.client = client;
 
-  provideCompletionItems(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    token: vscode.CancellationToken,
-    context: vscode.CompletionContext
-  ): vscode.ProviderResult<vscode.CompletionItem[] | vscode.CompletionList<vscode.CompletionItem>> {
-    const line = document.lineAt(position).text.trimStart();
-    if (!line.startsWith("[metadata]: #") && !line.includes("Tags:")) {
-      return;
-    }
-    const tags = Object.keys(this.tagToElements);
-    return tags.map((tag) => new vscode.CompletionItem(tag, vscode.CompletionItemKind.Keyword));
+    this.client.onReady().then(() => {
+      this.client.onNotification(REFRESH_TAGS_TREE_METHOD, (params: RefreshTagsTreeParams) => {
+        this.tagToElements = params.tagsToElement;
+        this._onDidChangeTreeData.fire();
+      });
+    });
   }
 
   private _onDidChangeTreeData: vscode.EventEmitter<Element | undefined | null | void> = new vscode.EventEmitter<Element | undefined | null | void>();
@@ -67,6 +68,16 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
 
   getTreeItem(element: Element): vscode.TreeItem {
     return element;
+  }
+
+  async callLanguageServerForTagTree(): Promise<Element[]> {
+    const res: { tag: string; files: { name: string; filePath: string }[] }[] = await this.client
+      .onReady()
+      .then(() => this.client.sendRequest(GET_ALL_TAGS_METHOD));
+
+    this.tagToElements = {};
+    res.forEach((val) => (this.tagToElements[val.tag] = val.files.map((file) => new Element("file", file.name, file.filePath))));
+    return res.map((val) => new Element("tag", val.tag, null));
   }
 
   getChildren(element?: Element): Thenable<Element[]> {
@@ -84,126 +95,21 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
       }
     } else {
       // root level
-      return this.getAllTags();
+      return this.callLanguageServerForTagTree();
     }
   }
 
-  async walk(dirPath: string): Promise<Element[]> {
-    const filePaths: Element[] = [];
-    const dirents = await fs.promises.readdir(dirPath, { withFileTypes: true });
-    dirents
-      .filter((dirent) => !dirent.isDirectory())
-      .forEach((dirent) => {
-        const fp = path.join(dirPath, dirent.name);
-        filePaths.push(new Element("file", dirent.name, fp));
-      });
-    await Promise.all(
-      dirents
-        .filter((dirent) => dirent.isDirectory())
-        .map(async (dirent) => {
-          const fp = path.join(dirPath, dirent.name);
-          const children = await this.walk(fp);
-          filePaths.push(...children);
-        })
-    );
-    return filePaths;
-  }
-
-  async extractTagFromNote(fp: string): Promise<string[]> {
-    const data = await fs.promises.readFile(fp, "utf-8");
-    const yamlHeader = frontMatter(data);
-    if (yamlHeader?.attributes?.Tags) {
-      if (Array.isArray(yamlHeader?.attributes?.Tags)) {
-        return yamlHeader?.attributes?.Tags;
-      } else if (typeof yamlHeader?.attributes?.Tags === "string") {
-        return [yamlHeader?.attributes?.Tags];
-      }
-    }
-    return [];
-  }
-
-  async getAllTags() {
-    const config = loadConfiguration();
-    const elements = await this.walk(config.saveNotesPath ? path.join(this.workspaceRoot, config.saveNotesPath) : this.workspaceRoot);
-    const te: { [key: string]: Element[] } = {};
-    await Promise.all(
-      elements.map(async (element) => {
-        if (!element.filePath) {
-          return;
-        }
-        const tags = await this.extractTagFromNote(element.filePath);
-        tags.forEach((tag) => {
-          if (tag in te) {
-            te[tag].push(element);
-          } else {
-            te[tag] = [element];
-          }
-        });
-      })
-    );
-
-    // sort files
-    Object.keys(te).forEach((key) => {
-      te[key].sort((a, b) => a.name.localeCompare(b.name));
-    });
-
-    this.tagToElements = te;
-
-    return Promise.resolve(
-      Object.keys(this.tagToElements)
-        // sort tags
-        .sort()
-        .map((key) => new Element("tag", key, null))
-    );
-  }
-
-  async createVirtualDocument(uri: vscode.Uri, destinationPath: string | null): Promise<string> {
-    const config = loadConfiguration();
+  async callLanguageServerForVirtualDocument(uri: vscode.Uri, destinationPath: string | null): Promise<string> {
     const tag = uri.path;
     if (!this.tagToElements[tag]) {
       return "";
     }
-    const texts = await Promise.all(
-      this.tagToElements[tag]?.map((element) => {
-        if (element.filePath) {
-          return fs.promises.readFile(element.filePath, "utf-8").then((text) => {
-            return element.filePath && destinationPath != null ? replaceUrl(text, path.dirname(element.filePath), destinationPath) : text;
-          });
-        }
-      })
-    );
-    return texts.filter((v) => typeof v === "string").join(config.EOL + config.EOL + "* * * * * * * * * * * * * * *" + config.EOL + config.EOL);
+    const config = loadConfiguration();
+    const parms: CreateVirtualDocumentParams = { EOL: config.EOL, tag: tag, destinationPath: destinationPath ?? "" };
+    return await this.client.onReady().then(() => this.client.sendRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, parms));
   }
 
-  async doRanmeTag(filePath: string, oldTag: string, newTag: string, config: extensionConfig) {
-    const fileUri = vscode.Uri.parse(filePath);
-    const text = await (await vscode.workspace.fs.readFile(fileUri)).toString();
-    const yamlHeader = frontMatter(text);
-    if (yamlHeader?.attributes == null || Object.keys(yamlHeader.attributes).length == 0) {
-      return;
-    }
-    let newTags;
-    if (yamlHeader?.attributes?.Tags != null) {
-      if (Array.isArray(yamlHeader?.attributes?.Tags)) {
-        newTags = yamlHeader.attributes.Tags.map((tag: string) => {
-          if (tag === oldTag) {
-            return newTag;
-          }
-          return tag;
-        });
-        newTags = Array.from(new Set(newTags));
-      } else if (typeof yamlHeader?.attributes?.Tags === "string") {
-        newTags = yamlHeader?.attributes?.Tags === oldTag ? newTag : yamlHeader?.attributes?.Tags;
-      }
-      yamlHeader.attributes.Tags = newTags;
-    }
-    const newHeader = "---" + config.EOL + stringify(yamlHeader.attributes) + "---";
-    const newText = newHeader + config.EOL + yamlHeader.body ?? "";
-    const writeData = Buffer.from(newText, "utf-8");
-    await vscode.workspace.fs.writeFile(fileUri, writeData);
-  }
-
-  async renameTag(oldTag: string) {
+  async callLanguageServerToRenameTag(oldTag: string) {
     const newTag = await vscode.window.showInputBox({ placeHolder: oldTag, title: "Rename Tag", prompt: "Please input new name of tag." });
     if (newTag == null) {
       return;
@@ -218,7 +124,8 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element>, vsco
         if (element.filePath == null) {
           return;
         }
-        return this.doRanmeTag(element.filePath, oldTag, newTag, config);
+        const parms: RenameTagParms = { filePath: element.filePath, oldTag: oldTag, newTag: newTag, EOL: config.EOL };
+        return this.client.onReady().then(() => this.client.sendRequest(RENAME_TAG_METHOD, parms));
       })
     );
     this.refresh();

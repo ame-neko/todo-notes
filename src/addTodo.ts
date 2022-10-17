@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as vscode from "vscode";
-import { loadConfiguration, loadIndentConfig, getDateStr, getIndentOfLine } from "./utils";
+import { getDateStr, loadConfiguration, loadIndentConfig } from "./vscodeUtils";
+import { getIndentOfLine } from "./utils";
 
 export function addTodo() {
   const config = loadConfiguration();

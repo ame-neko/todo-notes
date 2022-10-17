@@ -1,13 +1,40 @@
+import { FILE_SAVED_NOTIFICATION_METHOD, FileSavedParams } from "./constants";
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
+import path = require("path");
 import * as vscode from "vscode";
 import { addTodo, addTodoWithoutMetadata } from "./addTodo";
 import { completeTodo } from "./completeTodo";
 import { Element, NotesTagsProvider } from "./tagsTreeView";
+import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from "vscode-languageclient/node";
+
+let client: LanguageClient;
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  const serverModule = context.asAbsolutePath(path.join("out", "server", "server.js"));
+  const debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
+  const serverOptions: ServerOptions = {
+    run: { module: serverModule, transport: TransportKind.ipc },
+    debug: {
+      module: serverModule,
+      transport: TransportKind.ipc,
+      options: debugOptions,
+    },
+  };
+  // Options to control the language client
+  const clientOptions: LanguageClientOptions = {
+    // Register the server for plain text documents
+    // TODO: add untitled schema
+    documentSelector: [{ scheme: "file", language: "markdown" }],
+  };
+  // Create the language client and start the client.
+  client = new LanguageClient("languageServerExample", "Language Server Example", serverOptions, clientOptions);
+
+  // Start the client. This will also launch the server
+  client.start();
+
   const addTodoDisposable = vscode.commands.registerCommand("todo-notes.addTodo", () => {
     addTodo();
   });
@@ -18,8 +45,12 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(addSimpleTodoDisposable);
 
-  const completeAndCopyTodoDisposable = vscode.commands.registerCommand("todo-notes.completeAndCopyTodo", () => {
-    completeTodo(true, true);
+  const completeAndCopyTodoDisposable = vscode.commands.registerCommand("todo-notes.completeAndCopyTodo", async () => {
+    const fileUri = await completeTodo(true, true);
+    if (fileUri != null) {
+      const params: FileSavedParams = { filePath: fileUri.fsPath };
+      client.sendNotification(FILE_SAVED_NOTIFICATION_METHOD, params);
+    }
   });
   context.subscriptions.push(completeAndCopyTodoDisposable);
 
@@ -36,10 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
   const rootPath =
     vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0 ? vscode.workspace.workspaceFolders[0].uri.fsPath : undefined;
   if (rootPath) {
-    const provider = new NotesTagsProvider(rootPath);
-
-    const completinProviderDisposable = vscode.languages.registerCompletionItemProvider("markdown", provider, " ");
-    context.subscriptions.push(completinProviderDisposable);
+    const provider = new NotesTagsProvider(rootPath, client);
 
     const treeViewDisposable = vscode.window.createTreeView("todoNotesTags", {
       treeDataProvider: provider,
@@ -47,7 +75,9 @@ export function activate(context: vscode.ExtensionContext) {
     });
     const refreshDisposable = vscode.commands.registerCommand("todoNotesTags.refreshEntry", () => provider.refresh());
     context.subscriptions.push(refreshDisposable);
-    const renameDisposable = vscode.commands.registerCommand("todoNotesTags.renameTag", (element: Element) => provider.renameTag(element.name));
+    const renameDisposable = vscode.commands.registerCommand("todoNotesTags.renameTag", (element: Element) =>
+      provider.callLanguageServerToRenameTag(element.name)
+    );
     context.subscriptions.push(renameDisposable);
 
     const createVirtualDocumentDisposable = vscode.commands.registerCommand("todoNotesTags.createVirtualDocument", async (element: Element) => {
@@ -59,8 +89,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(createVirtualDocumentDisposable);
 
     const tagAllDocumentProvider = new (class implements vscode.TextDocumentContentProvider {
-      async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-        return await provider.createVirtualDocument(uri, vscode?.workspace?.workspaceFolders ? vscode?.workspace?.workspaceFolders[0].uri.path : null);
+      provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+        return provider.callLanguageServerForVirtualDocument(uri, vscode?.workspace?.workspaceFolders ? vscode?.workspace?.workspaceFolders[0].uri.path : null);
       }
     })();
     const tagAllDocumentProviderDisposable = vscode.workspace.registerTextDocumentContentProvider("tags", tagAllDocumentProvider);
@@ -80,4 +110,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 // eslint-disable-next-line @typescript-eslint/no-empty-function
-export function deactivate() {}
+export function deactivate() {
+  if (!client) {
+    return undefined;
+  }
+  return client.stop();
+}
