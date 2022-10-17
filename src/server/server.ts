@@ -6,7 +6,7 @@ import {
   FileSavedParams,
   FILE_SAVED_NOTIFICATION_METHOD,
 } from "./../constants";
-import { TagHandler } from "./tagParser";
+import { TagHandler } from "./tagHandler";
 import {
   createConnection,
   TextDocuments,
