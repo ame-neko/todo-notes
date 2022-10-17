@@ -239,7 +239,7 @@ export class TagHandler {
       const items: CompletionItem[] = [];
       this.pathSet.forEach((path) => {
         if (!path.startsWith(currentToken)) return;
-        items.push({ label: path, kind: CompletionItemKind.Keyword, insertText: path.substring(currentToken.length) });
+        items.push({ label: path, kind: CompletionItemKind.Folder, insertText: path.substring(currentToken.length) });
       });
       return items;
     }
