@@ -20,7 +20,7 @@ import {
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { CreateVirtualDocumentParams, CREATE_VIRTUAL_DOCUMENT_METHOD, GetAllTagsParams, GET_ALL_TAGS_METHOD } from "../constants";
+import { CreateVirtualDocumentParams, CREATE_VIRTUAL_DOCUMENT_METHOD, GET_ALL_TAGS_METHOD } from "../constants";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -28,9 +28,13 @@ const connection = createConnection(ProposedFeatures.all);
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let hasWorkspaceFolderCapability = false;
+let tagHandler: TagHandler;
 
 connection.onInitialize((params: InitializeParams) => {
   const capabilities = params.capabilities;
+  const workspaceRoot =
+    params.workspaceFolders && params.workspaceFolders[0].uri.startsWith("file://") ? params.workspaceFolders[0].uri.substring("file://".length) : "";
+  tagHandler = new TagHandler(workspaceRoot);
 
   // Does the client support the `workspace/configuration` request?
   // If not, we fall back using global settings.
@@ -40,7 +44,7 @@ connection.onInitialize((params: InitializeParams) => {
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       completionProvider: {
-        triggerCharacters: [" "],
+        triggerCharacters: [" ", "/"],
       },
     },
   };
@@ -54,10 +58,8 @@ connection.onInitialize((params: InitializeParams) => {
   return result;
 });
 
-const tagHandler = new TagHandler();
-
-connection.onRequest(GET_ALL_TAGS_METHOD, (params: GetAllTagsParams) => {
-  return tagHandler.getAllTags(params.workspaceRoot);
+connection.onRequest(GET_ALL_TAGS_METHOD, () => {
+  return tagHandler.getAllTags();
 });
 
 connection.onRequest(CREATE_VIRTUAL_DOCUMENT_METHOD, (params: CreateVirtualDocumentParams) => {
@@ -92,7 +94,7 @@ connection.onCompletion((_textDocumentPosition: TextDocumentPositionParams): Com
   }
 
   const range = Range.create(_textDocumentPosition.position.line, 0, _textDocumentPosition.position.line, _textDocumentPosition.position.character);
-  const line = document.getText(range);
+  const line = document.getText(range).trimStart();
 
   return tagHandler.provideCompletionItems(line);
 });

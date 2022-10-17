@@ -21,6 +21,12 @@ export class TagHandler {
   tagToElements: TagToFile = {};
   notesDir = null;
   filePathToFileInfo: { [filePath: string]: FileInfo } = {};
+  pathSet: Set<string> = new Set();
+  readonly workspaceRoot;
+
+  constructor(workspaceRoot: string) {
+    this.workspaceRoot = workspaceRoot;
+  }
 
   async extractTagFromNote(fp: string): Promise<string[]> {
     const data = await fs.promises.readFile(fp, "utf-8");
@@ -75,12 +81,31 @@ export class TagHandler {
     return te;
   }
 
-  async getAllTags(workspaceRoot: string) {
-    //   const config = loadConfiguration();
+  updatePathCompletionCandidates(filePathList: string[]) {
+    filePathList.forEach((filePath) => {
+      if (!filePath.startsWith(this.workspaceRoot)) {
+        return;
+      }
+      const dirPathInWorkspace = path.dirname(filePath.substring(this.workspaceRoot.length));
+      let partialPath = "";
+      dirPathInWorkspace.split(path.sep).forEach((dirName) => {
+        if (dirName.length > 0) {
+          if (partialPath.length === 0) {
+            partialPath += dirName;
+          } else {
+            partialPath += path.sep + dirName;
+          }
+          this.pathSet.add(partialPath);
+        }
+      });
+    });
+  }
+
+  async getAllTags() {
     const config = {
       saveNotesPath: "",
     };
-    const elements = await this.walk(config.saveNotesPath ? path.join(workspaceRoot, config.saveNotesPath) : workspaceRoot);
+    const elements = await this.walk(config.saveNotesPath ? path.join(this.workspaceRoot, config.saveNotesPath) : this.workspaceRoot);
     const te: TagToFile = {};
     await Promise.all(
       elements.map(async (element) => {
@@ -103,6 +128,8 @@ export class TagHandler {
     Object.keys(te).forEach((key) => {
       te[key].forEach((fileInfo) => (this.filePathToFileInfo[fileInfo.filePath] = fileInfo));
     });
+
+    this.updatePathCompletionCandidates(Object.keys(this.filePathToFileInfo));
 
     return Promise.resolve(
       Object.keys(te)
@@ -184,6 +211,7 @@ export class TagHandler {
         newFileInfo = { name: fileName, filePath: filePath, version: version ?? -1, tags: tags };
         this.filePathToFileInfo[filePath] = newFileInfo;
       }
+      this.updatePathCompletionCandidates(Object.keys(this.filePathToFileInfo));
     }
 
     this.tagToElements = this.generateTagsToElements(Object.values(this.filePathToFileInfo));
@@ -191,13 +219,30 @@ export class TagHandler {
   }
 
   provideCompletionItems(line: string): CompletionItem[] {
-    if (!line.startsWith("[metadata]: #") && !line.includes("Tags:")) {
+    if (!line.startsWith("[metadata]: #")) {
       return [];
     }
-    const tags = Object.keys(this.tagToElements);
-    const items = tags.map((tag) => {
-      return { label: tag, kind: CompletionItemKind.Keyword };
-    });
-    return items;
+    if (line.includes("Tags:")) {
+      const tags = Object.keys(this.tagToElements);
+      const items = tags.map((tag) => {
+        return { label: tag, kind: CompletionItemKind.Keyword };
+      });
+      return items;
+    }
+    if (line.includes("FolderPath:")) {
+      const tokens = line.split(" ");
+      if (tokens.length == 0) {
+        return [];
+      }
+      const currentToken = tokens[tokens.length - 1];
+
+      const items: CompletionItem[] = [];
+      this.pathSet.forEach((path) => {
+        if (!path.startsWith(currentToken)) return;
+        items.push({ label: path, kind: CompletionItemKind.Keyword, insertText: path.substring(currentToken.length) });
+      });
+      return items;
+    }
+    return [];
   }
 }

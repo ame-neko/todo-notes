@@ -73,7 +73,7 @@ export class NotesTagsProvider implements vscode.TreeDataProvider<Element> {
   async callLanguageServerForTagTree(): Promise<Element[]> {
     const res: { tag: string; files: { name: string; filePath: string }[] }[] = await this.client
       .onReady()
-      .then(() => this.client.sendRequest(GET_ALL_TAGS_METHOD, { workspaceRoot: this.workspaceRoot }));
+      .then(() => this.client.sendRequest(GET_ALL_TAGS_METHOD));
 
     this.tagToElements = {};
     res.forEach((val) => (this.tagToElements[val.tag] = val.files.map((file) => new Element("file", file.name, file.filePath))));
