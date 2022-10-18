@@ -7,7 +7,7 @@ Manage todo and take notes in markdown.
 - Move todo contents to notes directory when the todo task is completed.  
   By using the `Complete Todo and Copy to Notes` command (`ctrl+d` or `cmd+d`), the contents of the checkbox at the cursor's location are copied to the notebook.
   ![](https://github.com/ame-neko/todo-notes/blob/master/images/complete-todo-explanation.gif?raw=true)
-- Links to image files are automatically updated.
+- Links to image are automatically updated to the relative link from destination notes directory.
 - Metadata can be added to each todo task. Metadata is converted to yaml front matter in the destination note.
 
   - You can add any metadata in following syntax:  
@@ -44,14 +44,14 @@ Manage todo and take notes in markdown.
 
 This extension contributes the following settings:
 
-- `todoNotes.saveNotesPath`: Path to directory where notes will be saved.
-- `todoNotes.dateFormat`: Date format used in metaata. For example: yyyy-mm-dd'T'HH:MM:sso"
-- `todoNotes.addCompletionDate`: Add completion date to the yaml front matter of copied notes. (Default: true)
-- `todoNotes.appendMode`: Change the behavior when a file already exists at the time of saving a file. (`Append`/`Overwrite`/`Increment`)
-  - Append: Add todo contents to the end of file
-  - Overwrite: Overwrite the file with the contents of todo
-  - Increment: Change the file name by adding the number to the end of file name
-- `todoNotes.showDialogueWhenFileExist`: Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed. Effective only when append mode is "Overwrite". (Default: true)
-- `todoNotes.todoRangeDetectionMode`: Toggle todo range detection mode. strict: Detect todo range strictly following GFM markdwon syntax. next-todo: Todo range continues until next same or higher indent level todo.
-- `todoNotes.eol`: End of Line character of created note.
-- `todoNotew.colorizeTagIcon`: Colorize tag icon in tags tree view. The color is automatically determined from the hashcode of tag name.
+| Settings name                         | Description                                                                                                                                                                                                                                                                            | Default                  |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `todoNotes.saveNotesPath`             | Path to directory where notes will be saved.                                                                                                                                                                                                                                           | `notes`                  |
+| `todoNotes.dateFormat`                | Date format used in metaata.                                                                                                                                                                                                                                                           | `yyyy-mm-dd'T'HH:MM:sso` |
+| `todoNotes.addCompletionDate`         | Add completion date to the yaml front matter of copied notes.                                                                                                                                                                                                                          | `True`                   |
+| `todoNotes.appendMode`                | Change the behavior when a file already exists at the time of saving a file. <br/> - Append: Add todo contents to the end of file <br/> - Overwrite: Overwrite the file with the contents of todo <br/> - Increment: Change the file name by adding the number to the end of file name | `Overwrite`              |
+| `todoNotes.showDialogueWhenFileExist` | Check if note file already exist or not before copying todo contents. If true and the file exists, a confirmation dialog will be displayed. Effective only when append mode is "Overwrite".                                                                                            | `True`                   |
+| `todoNotes.todoRangeDetectionMode`    | Toggle todo range detection mode. strict: Detect todo range strictly following GFM markdwon syntax. next-todo: Todo range continues until next same or higher indent level todo.                                                                                                       | `strict`                 |
+| `todoNotes.eol`                       | End of Line character of created note.                                                                                                                                                                                                                                                 |                          |
+| `todoNotew.colorizeTagIcon`           | Colorize tag icon in tags tree view. The color is automatically determined from the hashcode of tag name.                                                                                                                                                                              | `True`                   |
+| `todoNotes.inheritParentTodoMetadata` | Inherit the metadatas such as tags and folderPath from parent todo Task.                                                                                                                                                                                                               | `True`                   |

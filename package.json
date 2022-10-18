@@ -154,6 +154,7 @@
         },
         "todoNotes.dateFormat": {
           "type": "string",
+          "default": "yyyy-mm-dd'T'HH:MM:sso",
           "description": "Date format used in metaata. For example: yyyy-mm-dd'T'HH:MM:sso"
         },
         "todoNotes.addCompletionDate": {
